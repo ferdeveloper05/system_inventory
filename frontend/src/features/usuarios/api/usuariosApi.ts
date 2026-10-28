@@ -5,8 +5,10 @@ import {
   UsuarioUpdate,
   Rol,
   RolCreate,
+  RolUpdate,
   Departamento,
   DepartamentoCreate,
+  DepartamentoUpdate,
   Empleado,
   EmpleadoCreate,
   EmpleadoUpdate,
@@ -55,6 +57,16 @@ export const usuariosApi = {
     return response.data;
   },
 
+  updateRol: async (id: number, data: RolUpdate): Promise<Rol> => {
+    const response = await apiClient.put<Rol>(`/usuarios/roles/${id}`, data);
+    return response.data;
+  },
+
+  deleteRol: async (id: number): Promise<{ message: string }> => {
+    const response = await apiClient.delete<{ message: string }>(`/usuarios/roles/${id}`);
+    return response.data;
+  },
+
   // Departamentos
   getDepartamentos: async (): Promise<Departamento[]> => {
     const response = await apiClient.get<Departamento[]>('/usuarios/departamentos');
@@ -63,6 +75,16 @@ export const usuariosApi = {
 
   createDepartamento: async (data: DepartamentoCreate): Promise<Departamento> => {
     const response = await apiClient.post<Departamento>('/usuarios/departamentos', data);
+    return response.data;
+  },
+
+  updateDepartamento: async (id: number, data: DepartamentoUpdate): Promise<Departamento> => {
+    const response = await apiClient.put<Departamento>(`/usuarios/departamentos/${id}`, data);
+    return response.data;
+  },
+
+  deleteDepartamento: async (id: number): Promise<{ message: string }> => {
+    const response = await apiClient.delete<{ message: string }>(`/usuarios/departamentos/${id}`);
     return response.data;
   },
 

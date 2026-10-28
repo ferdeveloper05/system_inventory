@@ -10,6 +10,8 @@ import { RecepcionesPage } from '../pages/RecepcionesPage';
 import { SolicitudesPage } from '../pages/SolicitudesPage';
 import { AuditoriaPage } from '../pages/AuditoriaPage';
 import { UsuariosPage } from '../pages/UsuariosPage';
+import { DepartamentosPage } from '../pages/DepartamentosPage';
+import { ControlAccesoPage } from '../pages/ControlAccesoPage';
 
 export const AppRoutes: React.FC = () => {
   return (
@@ -27,6 +29,8 @@ export const AppRoutes: React.FC = () => {
           <Route path="/recepciones" element={<RecepcionesPage />} />
           <Route path="/solicitudes" element={<SolicitudesPage />} />
           <Route path="/usuarios" element={<UsuariosPage />} />
+          <Route path="/departamentos" element={<DepartamentosPage />} />
+          <Route path="/control-acceso" element={<ControlAccesoPage />} />
           <Route path="/auditoria" element={<AuditoriaPage />} />
         </Route>
       </Route>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useUsuarios } from '../hooks/useUsuarios';
-import { Building2, Shield, Plus, Check } from 'lucide-react';
+import { Building2, Shield, Plus, Check, ExternalLink } from 'lucide-react';
 
 export const DepartamentosRolesSection: React.FC = () => {
   const {
@@ -54,14 +55,23 @@ export const DepartamentosRolesSection: React.FC = () => {
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
       {/* Departamentos */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200/80 p-6 space-y-4">
-        <div className="flex items-center space-x-2.5 pb-3 border-b border-slate-100">
-          <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-            <Building2 className="w-5 h-5" />
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div className="flex items-center space-x-2.5">
+            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+              <Building2 className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-slate-800">Departamentos</h3>
+              <p className="text-xs text-slate-500">Estructura organizativa de la entidad</p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-base font-semibold text-slate-800">Departamentos</h3>
-            <p className="text-xs text-slate-500">Estructura organizativa de la entidad</p>
-          </div>
+          <Link
+            to="/departamentos"
+            className="inline-flex items-center space-x-1 text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1.5 rounded-lg transition-colors"
+          >
+            <span>Módulo Completo</span>
+            <ExternalLink className="w-3 h-3" />
+          </Link>
         </div>
 
         {/* Lista */}
@@ -123,14 +133,23 @@ export const DepartamentosRolesSection: React.FC = () => {
 
       {/* Roles */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200/80 p-6 space-y-4">
-        <div className="flex items-center space-x-2.5 pb-3 border-b border-slate-100">
-          <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
-            <Shield className="w-5 h-5" />
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div className="flex items-center space-x-2.5">
+            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+              <Shield className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-slate-800">Roles de Acceso</h3>
+              <p className="text-xs text-slate-500">Perfiles de permisos para usuarios</p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-base font-semibold text-slate-800">Roles de Acceso</h3>
-            <p className="text-xs text-slate-500">Perfiles de permisos para usuarios</p>
-          </div>
+          <Link
+            to="/control-acceso"
+            className="inline-flex items-center space-x-1 text-xs font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1.5 rounded-lg transition-colors"
+          >
+            <span>Módulo Completo</span>
+            <ExternalLink className="w-3 h-3" />
+          </Link>
         </div>
 
         {/* Lista */}

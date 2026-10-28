@@ -12,6 +12,12 @@ export interface DepartamentoCreate {
   activo?: boolean;
 }
 
+export interface DepartamentoUpdate {
+  nombre?: string;
+  descripcion?: string;
+  activo?: boolean;
+}
+
 export interface Rol {
   id: number;
   nombre: string;
@@ -22,6 +28,12 @@ export interface Rol {
 
 export interface RolCreate {
   nombre: string;
+  descripcion?: string;
+  activo?: boolean;
+}
+
+export interface RolUpdate {
+  nombre?: string;
   descripcion?: string;
   activo?: boolean;
 }

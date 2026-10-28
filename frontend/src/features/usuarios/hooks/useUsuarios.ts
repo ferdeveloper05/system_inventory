@@ -6,7 +6,9 @@ import {
   EmpleadoCreate,
   EmpleadoUpdate,
   DepartamentoCreate,
+  DepartamentoUpdate,
   RolCreate,
+  RolUpdate,
 } from '../types';
 
 export const useUsuarios = (filters?: { activo?: boolean }) => {
@@ -87,10 +89,44 @@ export const useUsuarios = (filters?: { activo?: boolean }) => {
     },
   });
 
+  const updateDepartamentoMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: DepartamentoUpdate }) =>
+      usuariosApi.updateDepartamento(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['departamentos'] });
+      queryClient.invalidateQueries({ queryKey: ['empleados'] });
+    },
+  });
+
+  const deleteDepartamentoMutation = useMutation({
+    mutationFn: (id: number) => usuariosApi.deleteDepartamento(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['departamentos'] });
+      queryClient.invalidateQueries({ queryKey: ['empleados'] });
+    },
+  });
+
   const createRolMutation = useMutation({
     mutationFn: (data: RolCreate) => usuariosApi.createRol(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['roles'] });
+    },
+  });
+
+  const updateRolMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: RolUpdate }) =>
+      usuariosApi.updateRol(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roles'] });
+      queryClient.invalidateQueries({ queryKey: ['usuarios'] });
+    },
+  });
+
+  const deleteRolMutation = useMutation({
+    mutationFn: (id: number) => usuariosApi.deleteRol(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roles'] });
+      queryClient.invalidateQueries({ queryKey: ['usuarios'] });
     },
   });
 
@@ -108,6 +144,8 @@ export const useUsuarios = (filters?: { activo?: boolean }) => {
 
     isLoadingUsuarios: usuariosQuery.isLoading,
     isLoadingEmpleados: empleadosQuery.isLoading,
+    isLoadingDepartamentos: departamentosQuery.isLoading,
+    isLoadingRoles: rolesQuery.isLoading,
 
     createUsuario: createUsuarioMutation.mutateAsync,
     isCreatingUsuario: createUsuarioMutation.isPending,
@@ -130,8 +168,20 @@ export const useUsuarios = (filters?: { activo?: boolean }) => {
     createDepartamento: createDepartamentoMutation.mutateAsync,
     isCreatingDepartamento: createDepartamentoMutation.isPending,
 
+    updateDepartamento: updateDepartamentoMutation.mutateAsync,
+    isUpdatingDepartamento: updateDepartamentoMutation.isPending,
+
+    deleteDepartamento: deleteDepartamentoMutation.mutateAsync,
+    isDeletingDepartamento: deleteDepartamentoMutation.isPending,
+
     createRol: createRolMutation.mutateAsync,
     isCreatingRol: createRolMutation.isPending,
+
+    updateRol: updateRolMutation.mutateAsync,
+    isUpdatingRol: updateRolMutation.isPending,
+
+    deleteRol: deleteRolMutation.mutateAsync,
+    isDeletingRol: deleteRolMutation.isPending,
   };
 };
 

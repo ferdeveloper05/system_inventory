@@ -7,7 +7,9 @@ import {
   ArrowDownToLine, 
   ArrowUpFromLine, 
   ClipboardList,
-  Users
+  Users,
+  Building2,
+  ShieldCheck
 } from 'lucide-react';
 
 const navigation = [
@@ -17,6 +19,8 @@ const navigation = [
   { name: 'Recepciones', href: '/recepciones', icon: ArrowDownToLine },
   { name: 'Solicitudes', href: '/solicitudes', icon: ArrowUpFromLine },
   { name: 'Usuarios', href: '/usuarios', icon: Users },
+  { name: 'Departamentos', href: '/departamentos', icon: Building2 },
+  { name: 'Control de Acceso', href: '/control-acceso', icon: ShieldCheck },
   { name: 'Auditoría', href: '/auditoria', icon: ClipboardList },
 ];
 

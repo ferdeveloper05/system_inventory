@@ -37,6 +37,12 @@ class RolCreate(RolBase):
     pass
 
 
+class RolUpdate(BaseSchema):
+    nombre: Optional[str] = None
+    descripcion: Optional[str] = None
+    activo: Optional[bool] = None
+
+
 class RolResponse(RolBase):
     id: int
     created_at: datetime
