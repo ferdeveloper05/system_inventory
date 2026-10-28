@@ -1,9 +1,9 @@
 from app.schemas.base import BaseSchema
 from app.schemas.auth import Token, TokenPayload, LoginRequest, CurrentUserResponse
 from app.schemas.usuarios import (
-    DepartamentoCreate, DepartamentoResponse,
+    DepartamentoCreate, DepartamentoUpdate, DepartamentoResponse,
     RolCreate, RolResponse,
-    EmpleadoCreate, EmpleadoResponse,
+    EmpleadoCreate, EmpleadoUpdate, EmpleadoResponse,
     UsuarioCreate, UsuarioUpdate, UsuarioResponse
 )
 from app.schemas.productos import (

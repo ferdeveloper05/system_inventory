@@ -57,6 +57,16 @@ class EmpleadoCreate(EmpleadoBase):
     pass
 
 
+class EmpleadoUpdate(BaseSchema):
+    nombre: Optional[str] = None
+    apellido: Optional[str] = None
+    email: Optional[EmailStr] = None
+    telefono: Optional[str] = None
+    cargo: Optional[str] = None
+    id_departamento: Optional[int] = None
+    activo: Optional[bool] = None
+
+
 class EmpleadoResponse(EmpleadoBase):
     id: int
     created_at: datetime

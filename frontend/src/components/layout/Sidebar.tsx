@@ -6,7 +6,8 @@ import {
   Warehouse, 
   ArrowDownToLine, 
   ArrowUpFromLine, 
-  ClipboardList 
+  ClipboardList,
+  Users
 } from 'lucide-react';
 
 const navigation = [
@@ -15,6 +16,7 @@ const navigation = [
   { name: 'Almacenes', href: '/almacenes', icon: Warehouse },
   { name: 'Recepciones', href: '/recepciones', icon: ArrowDownToLine },
   { name: 'Solicitudes', href: '/solicitudes', icon: ArrowUpFromLine },
+  { name: 'Usuarios', href: '/usuarios', icon: Users },
   { name: 'Auditoría', href: '/auditoria', icon: ClipboardList },
 ];
 
