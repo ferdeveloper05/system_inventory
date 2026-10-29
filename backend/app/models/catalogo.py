@@ -27,8 +27,10 @@ class Almacenes(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     codigo: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
     nombre: Mapped[str] = mapped_column(String(100), nullable=False)
+    tipo: Mapped[str] = mapped_column(String(50), default="GENERAL", nullable=False, index=True)
     ubicacion: Mapped[str] = mapped_column(String(200), nullable=False)
     capacidad: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    descripcion: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
 

@@ -26,6 +26,14 @@ async def lifespan(app: FastAPI):
     try:
         # Crea tablas si no existen (en producción se delega a migraciones con Alembic)
         Base.metadata.create_all(bind=engine)
+        # Sincronización segura de columnas de almacenes si la tabla ya existía
+        try:
+            from sqlalchemy import text
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE almacenes ADD COLUMN IF NOT EXISTS tipo VARCHAR(50) DEFAULT 'GENERAL';"))
+                conn.execute(text("ALTER TABLE almacenes ADD COLUMN IF NOT EXISTS descripcion TEXT;"))
+        except Exception as col_err:
+            logger.warning(f"Aviso al asegurar columnas en almacenes: {col_err}")
         logger.info("Modelos de Base de Datos sincronizados.")
     except Exception as e:
         logger.warning(f"No se pudo conectar inmediatamente a la BD (¿contenedor iniciando?): {e}")

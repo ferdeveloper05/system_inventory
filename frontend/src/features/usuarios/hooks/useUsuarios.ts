@@ -78,6 +78,15 @@ export const useUsuarios = (filters?: { activo?: boolean }) => {
       usuariosApi.updateEmpleado(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['empleados'] });
+      queryClient.invalidateQueries({ queryKey: ['usuarios'] });
+    },
+  });
+
+  const deleteEmpleadoMutation = useMutation({
+    mutationFn: (id: number) => usuariosApi.deleteEmpleado(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['empleados'] });
+      queryClient.invalidateQueries({ queryKey: ['usuarios'] });
     },
   });
 
@@ -164,6 +173,9 @@ export const useUsuarios = (filters?: { activo?: boolean }) => {
 
     updateEmpleado: updateEmpleadoMutation.mutateAsync,
     isUpdatingEmpleado: updateEmpleadoMutation.isPending,
+
+    deleteEmpleado: deleteEmpleadoMutation.mutateAsync,
+    isDeletingEmpleado: deleteEmpleadoMutation.isPending,
 
     createDepartamento: createDepartamentoMutation.mutateAsync,
     isCreatingDepartamento: createDepartamentoMutation.isPending,

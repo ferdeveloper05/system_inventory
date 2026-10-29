@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useUsuarios } from '../hooks/useUsuarios';
+import { Empleado } from '../types';
 import { CreateEmpleadoModal } from './CreateEmpleadoModal';
+import { EditEmpleadoModal } from './EditEmpleadoModal';
 import {
   UserPlus,
   Search,
@@ -10,12 +12,15 @@ import {
   Briefcase,
   UserCheck,
   RefreshCw,
+  Edit,
+  Trash2,
 } from 'lucide-react';
 
 export const EmpleadosList: React.FC = () => {
-  const { empleados, isLoadingEmpleados } = useUsuarios();
+  const { empleados, isLoadingEmpleados, deleteEmpleado, isDeletingEmpleado } = useUsuarios();
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editingEmpleado, setEditingEmpleado] = useState<Empleado | null>(null);
 
   const filteredEmpleados = useMemo(() => {
     return empleados.filter((emp) => {
@@ -23,6 +28,23 @@ export const EmpleadosList: React.FC = () => {
       return full.includes(searchTerm.toLowerCase());
     });
   }, [empleados, searchTerm]);
+
+  const handleDelete = async (emp: Empleado) => {
+    const confirmed = window.confirm(
+      `¿Estás seguro de que deseas eliminar al empleado "${emp.nombre} ${emp.apellido}"?\n\nNota: No se puede eliminar si tiene una cuenta de usuario vinculada.`
+    );
+    if (!confirmed) return;
+
+    try {
+      await deleteEmpleado(emp.id);
+    } catch (err: any) {
+      const msg =
+        err.response?.data?.detail ||
+        err.response?.data?.message ||
+        'Error al eliminar el empleado';
+      alert(typeof msg === 'string' ? msg : JSON.stringify(msg));
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -60,12 +82,13 @@ export const EmpleadosList: React.FC = () => {
                 <th className="px-6 py-3.5">Contacto</th>
                 <th className="px-6 py-3.5">Departamento</th>
                 <th className="px-6 py-3.5 text-center">Estado Laboral</th>
+                <th className="px-6 py-3.5 text-right">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {isLoadingEmpleados ? (
                 <tr>
-                  <td colSpan={4} className="text-center py-10 text-slate-400">
+                  <td colSpan={5} className="text-center py-10 text-slate-400">
                     <div className="inline-flex items-center space-x-2">
                       <RefreshCw className="w-4 h-4 animate-spin text-emerald-500" />
                       <span>Cargando plantilla de empleados...</span>
@@ -74,13 +97,14 @@ export const EmpleadosList: React.FC = () => {
                 </tr>
               ) : filteredEmpleados.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="text-center py-10 text-slate-400">
+                  <td colSpan={5} className="text-center py-10 text-slate-400">
                     No se encontraron empleados registrados.
                   </td>
                 </tr>
               ) : (
                 filteredEmpleados.map((emp) => (
                   <tr key={emp.id} className="hover:bg-slate-50/70 transition-colors">
+                    {/* Nombre & Cargo */}
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-3">
                         <div className="w-9 h-9 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center font-bold text-emerald-700 text-xs shrink-0">
@@ -98,6 +122,7 @@ export const EmpleadosList: React.FC = () => {
                       </div>
                     </td>
 
+                    {/* Contacto */}
                     <td className="px-6 py-4">
                       <p className="text-xs text-slate-700 flex items-center space-x-1.5">
                         <Mail className="w-3.5 h-3.5 text-slate-400" />
@@ -111,6 +136,7 @@ export const EmpleadosList: React.FC = () => {
                       )}
                     </td>
 
+                    {/* Departamento */}
                     <td className="px-6 py-4">
                       <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700">
                         <Building2 className="w-3 h-3 text-slate-400" />
@@ -118,17 +144,40 @@ export const EmpleadosList: React.FC = () => {
                       </span>
                     </td>
 
+                    {/* Estado Laboral */}
                     <td className="px-6 py-4 text-center">
                       {emp.activo ? (
-                        <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+                        <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
                           <UserCheck className="w-3 h-3" />
                           <span>Activo</span>
                         </span>
                       ) : (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">
                           Inactivo
                         </span>
                       )}
+                    </td>
+
+                    {/* Acciones */}
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end space-x-2">
+                        <button
+                          onClick={() => setEditingEmpleado(emp)}
+                          title="Editar empleado"
+                          className="p-1.5 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 border border-slate-200 rounded-lg transition-colors"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+
+                        <button
+                          onClick={() => handleDelete(emp)}
+                          disabled={isDeletingEmpleado}
+                          title="Eliminar empleado"
+                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 rounded-lg transition-colors disabled:opacity-50"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -138,11 +187,18 @@ export const EmpleadosList: React.FC = () => {
         </div>
       </div>
 
+      {/* Modal de Creación */}
       <CreateEmpleadoModal
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
       />
+
+      {/* Modal de Edición */}
+      <EditEmpleadoModal
+        empleado={editingEmpleado}
+        isOpen={!!editingEmpleado}
+        onClose={() => setEditingEmpleado(null)}
+      />
     </div>
   );
 };
-

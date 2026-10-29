@@ -103,5 +103,10 @@ export const usuariosApi = {
     const response = await apiClient.put<Empleado>(`/usuarios/empleados/${id}`, data);
     return response.data;
   },
+
+  deleteEmpleado: async (id: number): Promise<{ message: string }> => {
+    const response = await apiClient.delete<{ message: string }>(`/usuarios/empleados/${id}`);
+    return response.data;
+  },
 };
 
