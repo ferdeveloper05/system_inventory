@@ -1,18 +1,26 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import func
-from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.security import get_current_user, get_password_hash
-from app.models.acceso import Usuarios, Roles, Empleados, Departamento
+from app.models.acceso import Departamento, Empleados, Roles, Usuarios
 from app.schemas.usuarios import (
-    UsuarioCreate, UsuarioUpdate, UsuarioResponse,
-    RolCreate, RolUpdate, RolResponse,
-    EmpleadoCreate, EmpleadoUpdate, EmpleadoResponse,
-    DepartamentoCreate, DepartamentoUpdate, DepartamentoResponse
+    DepartamentoCreate,
+    DepartamentoResponse,
+    DepartamentoUpdate,
+    EmpleadoCreate,
+    EmpleadoResponse,
+    EmpleadoUpdate,
+    RolCreate,
+    RolResponse,
+    RolUpdate,
+    UsuarioCreate,
+    UsuarioResponse,
+    UsuarioUpdate,
 )
 from app.services.auditoria_service import auditoria_service
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import func
+from sqlalchemy.orm import Session
 
 router = APIRouter()
 
@@ -264,6 +272,16 @@ def update_empleado(
     if not emp:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Empleado no encontrado")
 
+    datos_anteriores = {
+        "nombre": emp.nombre,
+        "apellido": emp.apellido,
+        "email": emp.email,
+        "telefono": emp.telefono,
+        "cargo": emp.cargo,
+        "id_departamento": emp.id_departamento,
+        "activo": emp.activo,
+    }
+
     update_data = emp_in.model_dump(exclude_unset=True)
     if "email" in update_data and update_data["email"]:
         clean_email = update_data["email"].strip().lower()
@@ -277,6 +295,16 @@ def update_empleado(
 
     for field, value in update_data.items():
         setattr(emp, field, value)
+
+    auditoria_service.registrar(
+        db=db,
+        tabla_afectada="empleados",
+        operacion="UPDATE",
+        registro_id=emp.id,
+        datos_anteriores=datos_anteriores,
+        datos_nuevos=update_data,
+        id_usuario=current_user.id
+    )
 
     db.commit()
     db.refresh(emp)
@@ -299,6 +327,16 @@ def delete_empleado(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"No se puede eliminar el empleado '{emp.nombre} {emp.apellido}' porque tiene una cuenta de usuario vinculada ({usuario_asociado.username})."
         )
+
+    auditoria_service.registrar(
+        db=db,
+        tabla_afectada="empleados",
+        operacion="DELETE",
+        registro_id=emp.id,
+        datos_anteriores={"nombre": emp.nombre, "apellido": emp.apellido, "email": emp.email},
+        datos_nuevos=None,
+        id_usuario=current_user.id
+    )
 
     db.delete(emp)
     db.commit()
