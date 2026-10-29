@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAlmacenes } from '../hooks/useAlmacenes';
-import { Almacen, TIPOS_ALMACEN_META } from '../types';
+import { Almacen, AlmacenTipo, TIPOS_ALMACEN_META } from '../types';
 import {
   X,
   Warehouse,
@@ -12,6 +12,12 @@ import {
   AlertCircle,
   RefreshCw,
   Box,
+  UtensilsCrossed,
+  Sparkles,
+  Laptop,
+  FileText,
+  Wrench,
+  Tag,
 } from 'lucide-react';
 
 interface AlmacenDetailModalProps {
@@ -34,6 +40,25 @@ export const AlmacenDetailModal: React.FC<AlmacenDetailModalProps> = ({
   const meta = TIPOS_ALMACEN_META[almacen.tipo || 'GENERAL'] || TIPOS_ALMACEN_META.GENERAL;
   const porcentaje = almacen.porcentaje_ocupacion ?? 0;
 
+  const getTipoIcon = (tipo: AlmacenTipo) => {
+    switch (tipo) {
+      case 'ALIMENTOS':
+        return <UtensilsCrossed className="w-5 h-5" />;
+      case 'LIMPIEZA':
+        return <Sparkles className="w-5 h-5" />;
+      case 'TECNOLOGIA':
+        return <Laptop className="w-5 h-5" />;
+      case 'PAPELERIA':
+        return <FileText className="w-5 h-5" />;
+      case 'MANTENIMIENTO':
+        return <Wrench className="w-5 h-5" />;
+      case 'GENERAL':
+        return <Warehouse className="w-5 h-5" />;
+      default:
+        return <Warehouse className="w-5 h-5" />;
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full border border-slate-200 overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200 my-8">
@@ -41,7 +66,7 @@ export const AlmacenDetailModal: React.FC<AlmacenDetailModalProps> = ({
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
           <div className="flex items-center space-x-3">
             <div className={`p-2.5 rounded-xl ${meta.iconBg} ${meta.iconText}`}>
-              <Warehouse className="w-5 h-5" />
+              {getTipoIcon(almacen.tipo || 'GENERAL')}
             </div>
             <div>
               <div className="flex items-center space-x-2">
@@ -78,7 +103,7 @@ export const AlmacenDetailModal: React.FC<AlmacenDetailModalProps> = ({
             <div className="bg-slate-50 rounded-xl p-3.5 border border-slate-200/80">
               <span className="text-xs text-slate-500 flex items-center space-x-1">
                 <Package className="w-3.5 h-3.5 text-slate-400" />
-                <span>Stock Actual en Depósito</span>
+                <span>Stock Físico Almacenado</span>
               </span>
               <p className="text-xl font-bold text-slate-900 mt-1">
                 {almacen.stock_total ?? 0}
@@ -89,18 +114,18 @@ export const AlmacenDetailModal: React.FC<AlmacenDetailModalProps> = ({
             <div className="bg-slate-50 rounded-xl p-3.5 border border-slate-200/80">
               <span className="text-xs text-slate-500 flex items-center space-x-1">
                 <Layers className="w-3.5 h-3.5 text-slate-400" />
-                <span>Líneas / Productos Distintos</span>
+                <span>Líneas de Producto</span>
               </span>
               <p className="text-xl font-bold text-slate-900 mt-1">
                 {almacen.total_productos ?? 0}
-                <span className="text-xs font-normal text-slate-500 ml-1">ítems únicos</span>
+                <span className="text-xs font-normal text-slate-500 ml-1">ítems distintos</span>
               </p>
             </div>
 
             <div className="bg-slate-50 rounded-xl p-3.5 border border-slate-200/80">
               <span className="text-xs text-slate-500 flex items-center space-x-1">
                 <Box className="w-3.5 h-3.5 text-slate-400" />
-                <span>Capacidad y Ocupación</span>
+                <span>Capacidad & Ocupación</span>
               </span>
               <p className="text-xl font-bold text-slate-900 mt-1">
                 {almacen.capacidad ? `${almacen.capacidad} u.` : 'Sin límite'}
@@ -122,9 +147,29 @@ export const AlmacenDetailModal: React.FC<AlmacenDetailModalProps> = ({
             </div>
           </div>
 
+          {/* Categorías admitidas */}
+          {almacen.categorias && almacen.categorias.length > 0 && (
+            <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/80">
+              <span className="text-xs font-semibold text-slate-700 flex items-center space-x-1.5 mb-2">
+                <Tag className="w-3.5 h-3.5 text-indigo-500" />
+                <span>Categorías de Suministro Enrutadas a este Almacén:</span>
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {almacen.categorias.map((c) => (
+                  <span
+                    key={c.id}
+                    className="px-2 py-0.5 rounded-md text-xs font-medium bg-white text-indigo-700 border border-indigo-200 shadow-2xs"
+                  >
+                    {c.nombre} ({c.codigo})
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
           {almacen.descripcion && (
             <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-3 text-xs text-blue-900">
-              <span className="font-semibold text-blue-950">Observaciones operativas: </span>
+              <span className="font-semibold text-blue-950">Observaciones y condiciones: </span>
               {almacen.descripcion}
             </div>
           )}
@@ -133,7 +178,7 @@ export const AlmacenDetailModal: React.FC<AlmacenDetailModalProps> = ({
           <div>
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-sm font-semibold text-slate-800 flex items-center space-x-2">
-                <span>Artículos en Stock en este Almacén</span>
+                <span>Existencias Actuales en este Almacén</span>
                 <span className="px-2 py-0.5 text-xs bg-slate-100 text-slate-600 rounded-full font-bold">
                   {inventario.length}
                 </span>
@@ -146,7 +191,7 @@ export const AlmacenDetailModal: React.FC<AlmacenDetailModalProps> = ({
                   <thead className="bg-slate-50 uppercase font-semibold text-[11px] text-slate-600 sticky top-0 border-b border-slate-200">
                     <tr>
                       <th className="px-4 py-2.5">Código & Producto</th>
-                      <th className="px-4 py-2.5">Pasillo / Estante</th>
+                      <th className="px-4 py-2.5">Ubicación / Pasillo</th>
                       <th className="px-4 py-2.5 text-center">Stock Físico</th>
                       <th className="px-4 py-2.5 text-center">Reservado</th>
                       <th className="px-4 py-2.5 text-right">Disponible</th>
@@ -158,14 +203,14 @@ export const AlmacenDetailModal: React.FC<AlmacenDetailModalProps> = ({
                         <td colSpan={5} className="text-center py-8 text-slate-400">
                           <div className="inline-flex items-center space-x-2">
                             <RefreshCw className="w-4 h-4 animate-spin text-indigo-500" />
-                            <span>Cargando inventario de este almacén...</span>
+                            <span>Cargando existencias del almacén...</span>
                           </div>
                         </td>
                       </tr>
                     ) : inventario.length === 0 ? (
                       <tr>
                         <td colSpan={5} className="text-center py-8 text-slate-400">
-                          Este almacén no tiene artículos registrados actualmente.
+                          No hay existencias registradas en este almacén en este momento.
                         </td>
                       </tr>
                     ) : (
@@ -217,4 +262,3 @@ export const AlmacenDetailModal: React.FC<AlmacenDetailModalProps> = ({
     </div>
   );
 };
-

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAlmacenes } from '../hooks/useAlmacenes';
 import { AlmacenTipo, TIPOS_ALMACEN_META } from '../types';
 import {
@@ -9,11 +9,12 @@ import {
   Package,
   AlignLeft,
   AlertCircle,
-  Cpu,
-  ArrowDownToLine,
-  Server,
-  ShieldCheck,
-  Trash2,
+  UtensilsCrossed,
+  Sparkles,
+  Laptop,
+  FileText,
+  Wrench,
+  Tag,
 } from 'lucide-react';
 
 interface CreateAlmacenModalProps {
@@ -22,40 +23,59 @@ interface CreateAlmacenModalProps {
 }
 
 export const CreateAlmacenModal: React.FC<CreateAlmacenModalProps> = ({ isOpen, onClose }) => {
-  const { createAlmacen, isCreatingAlmacen } = useAlmacenes();
+  const { createAlmacen, isCreatingAlmacen, categoriasDisponibles } = useAlmacenes();
 
   const [formData, setFormData] = useState({
-    codigo: 'ALM-PRI-01',
+    codigo: 'ALM-TEC-01',
     nombre: '',
-    tipo: 'GENERAL' as AlmacenTipo,
+    tipo: 'TECNOLOGIA' as AlmacenTipo,
     ubicacion: '',
     capacidad: '' as number | string,
     descripcion: '',
     activo: true,
+    ids_categorias: [] as number[],
   });
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  if (!isOpen) return null;
-
+  // Auto-seleccionar categoría sugerida al cambiar el tipo
   const handleTipoChange = (newTipo: AlmacenTipo) => {
     const meta = TIPOS_ALMACEN_META[newTipo];
-    // Sugerir prefijo si el usuario no ha personalizado demasiado el código
     let nuevoCodigo = formData.codigo;
-    if (
-      !formData.codigo ||
-      formData.codigo.startsWith('ALM-')
-    ) {
+    if (!formData.codigo || formData.codigo.startsWith('ALM-')) {
       const suffix = formData.codigo.split('-')[2] || '01';
       nuevoCodigo = `${meta.prefix}${suffix}`;
     }
+
+    // Buscar categoría sugerida por defecto
+    const matchingCat = categoriasDisponibles.find(
+      (c) => c.nombre.toLowerCase().includes(meta.defaultCategoryName.toLowerCase()) ||
+             c.nombre.toLowerCase().includes(newTipo.toLowerCase())
+    );
+
+    const newCats = matchingCat ? [matchingCat.id] : [];
 
     setFormData({
       ...formData,
       tipo: newTipo,
       codigo: nuevoCodigo,
+      ids_categorias: newCats,
     });
   };
+
+  const toggleCategoria = (catId: number) => {
+    setFormData((prev) => {
+      const exists = prev.ids_categorias.includes(catId);
+      return {
+        ...prev,
+        ids_categorias: exists
+          ? prev.ids_categorias.filter((id) => id !== catId)
+          : [...prev.ids_categorias, catId],
+      };
+    });
+  };
+
+  if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,16 +90,18 @@ export const CreateAlmacenModal: React.FC<CreateAlmacenModalProps> = ({ isOpen, 
         capacidad: formData.capacidad ? Number(formData.capacidad) : undefined,
         descripcion: formData.descripcion.trim() || undefined,
         activo: formData.activo,
+        ids_categorias: formData.ids_categorias.length > 0 ? formData.ids_categorias : undefined,
       });
 
       setFormData({
-        codigo: 'ALM-PRI-01',
+        codigo: 'ALM-TEC-01',
         nombre: '',
-        tipo: 'GENERAL',
+        tipo: 'TECNOLOGIA',
         ubicacion: '',
         capacidad: '',
         descripcion: '',
         activo: true,
+        ids_categorias: [],
       });
       onClose();
     } catch (err: any) {
@@ -93,18 +115,18 @@ export const CreateAlmacenModal: React.FC<CreateAlmacenModalProps> = ({ isOpen, 
 
   const getTipoIcon = (tipo: AlmacenTipo) => {
     switch (tipo) {
+      case 'ALIMENTOS':
+        return <UtensilsCrossed className="w-4 h-4" />;
+      case 'LIMPIEZA':
+        return <Sparkles className="w-4 h-4" />;
+      case 'TECNOLOGIA':
+        return <Laptop className="w-4 h-4" />;
+      case 'PAPELERIA':
+        return <FileText className="w-4 h-4" />;
+      case 'MANTENIMIENTO':
+        return <Wrench className="w-4 h-4" />;
       case 'GENERAL':
         return <Warehouse className="w-4 h-4" />;
-      case 'REPUESTOS':
-        return <Cpu className="w-4 h-4" />;
-      case 'TRANSITO':
-        return <ArrowDownToLine className="w-4 h-4" />;
-      case 'DATACENTER':
-        return <Server className="w-4 h-4" />;
-      case 'SEGURIDAD':
-        return <ShieldCheck className="w-4 h-4" />;
-      case 'DESECHO':
-        return <Trash2 className="w-4 h-4" />;
       default:
         return <Warehouse className="w-4 h-4" />;
     }
@@ -121,10 +143,10 @@ export const CreateAlmacenModal: React.FC<CreateAlmacenModalProps> = ({ isOpen, 
             </div>
             <div>
               <h3 className="text-base font-semibold text-slate-800">
-                Nuevo Almacén o Espacio de Almacenamiento
+                Nuevo Almacén Especializado
               </h3>
               <p className="text-xs text-slate-500">
-                Define el propósito, tipo de depósito, ubicación física y capacidad.
+                Define el tipo de suministro (comida, limpieza, tecnología, papelería), ubicación y capacidad.
               </p>
             </div>
           </div>
@@ -148,7 +170,7 @@ export const CreateAlmacenModal: React.FC<CreateAlmacenModalProps> = ({ isOpen, 
           {/* Selector de Tipo de Almacén */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-2">
-              Tipo de Almacén / Rol Operativo *
+              Línea de Suministro / Tipo de Almacén *
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
               {(Object.keys(TIPOS_ALMACEN_META) as AlmacenTipo[]).map((tipoKey) => {
@@ -186,11 +208,43 @@ export const CreateAlmacenModal: React.FC<CreateAlmacenModalProps> = ({ isOpen, 
             </div>
           </div>
 
+          {/* Categorías que recibe el almacén */}
+          {categoriasDisponibles.length > 0 && (
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center space-x-1.5">
+                <Tag className="w-3.5 h-3.5 text-slate-400" />
+                <span>Categorías de Producto que Recibe este Almacén</span>
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {categoriasDisponibles.map((cat) => {
+                  const isChecked = formData.ids_categorias.includes(cat.id);
+                  return (
+                    <button
+                      type="button"
+                      key={cat.id}
+                      onClick={() => toggleCategoria(cat.id)}
+                      className={`text-xs px-2.5 py-1 rounded-lg border font-medium transition-colors ${
+                        isChecked
+                          ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                          : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
+                      }`}
+                    >
+                      {cat.nombre}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1">
+                La infraestructura despachará automáticamente los productos de estas categorías a este almacén.
+              </p>
+            </div>
+          )}
+
           {/* Código y Nombre */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Código de Almacén *
+                Código del Almacén *
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -201,16 +255,16 @@ export const CreateAlmacenModal: React.FC<CreateAlmacenModalProps> = ({ isOpen, 
                   required
                   value={formData.codigo}
                   onChange={(e) => setFormData({ ...formData, codigo: e.target.value.toUpperCase() })}
-                  placeholder="ej. ALM-PRI-01"
+                  placeholder="ej. ALM-ALIM-01"
                   className="block w-full pl-9 pr-3 py-2 text-sm uppercase font-mono border border-slate-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
                 />
               </div>
-              <p className="text-[11px] text-slate-400 mt-0.5">Identificador único dentro de la institución</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">Identificador de ubicación para despachos</p>
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Nombre del Almacén *
+                Nombre Descriptivo *
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -221,7 +275,7 @@ export const CreateAlmacenModal: React.FC<CreateAlmacenModalProps> = ({ isOpen, 
                   required
                   value={formData.nombre}
                   onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                  placeholder="ej. Almacén Central de Telecomunicaciones"
+                  placeholder="ej. Almacén de Insumos de Cafetería y Perecederos"
                   className="block w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
                 />
               </div>
@@ -243,7 +297,7 @@ export const CreateAlmacenModal: React.FC<CreateAlmacenModalProps> = ({ isOpen, 
                   required
                   value={formData.ubicacion}
                   onChange={(e) => setFormData({ ...formData, ubicacion: e.target.value })}
-                  placeholder="ej. Edificio TI, Planta Baja, Módulo C"
+                  placeholder="ej. Edificio Sede, Sótano 1 - Área de Aseo"
                   className="block w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
                 />
               </div>
@@ -251,7 +305,7 @@ export const CreateAlmacenModal: React.FC<CreateAlmacenModalProps> = ({ isOpen, 
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Capacidad Máxima Estimada (Unidades)
+                Capacidad Máxima (Unidades)
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -262,18 +316,18 @@ export const CreateAlmacenModal: React.FC<CreateAlmacenModalProps> = ({ isOpen, 
                   min="1"
                   value={formData.capacidad}
                   onChange={(e) => setFormData({ ...formData, capacidad: e.target.value })}
-                  placeholder="ej. 2500"
+                  placeholder="ej. 3000"
                   className="block w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
                 />
               </div>
-              <p className="text-[11px] text-slate-400 mt-0.5">Opcional: Permite calcular porcentaje de ocupación</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">Control de llenado y alertas de capacidad</p>
             </div>
           </div>
 
           {/* Descripción */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Descripción & Observaciones
+              Descripción & Condiciones Especiales
             </label>
             <div className="relative">
               <div className="absolute top-2.5 left-3 flex items-start pointer-events-none text-slate-400">
@@ -283,7 +337,7 @@ export const CreateAlmacenModal: React.FC<CreateAlmacenModalProps> = ({ isOpen, 
                 rows={2}
                 value={formData.descripcion}
                 onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-                placeholder="Condiciones ambientales, acceso restringido, tipo de equipamiento admitido..."
+                placeholder="Condiciones de almacenamiento (ej. refrigeración requerida, ventilación para químicos, estantes metálicos)..."
                 className="block w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>
@@ -311,4 +365,3 @@ export const CreateAlmacenModal: React.FC<CreateAlmacenModalProps> = ({ isOpen, 
     </div>
   );
 };
-

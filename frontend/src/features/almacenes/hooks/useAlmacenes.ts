@@ -36,7 +36,13 @@ export const useAlmacenes = (filters?: {
   const tiposQuery = useQuery({
     queryKey: ['almacenes-tipos'],
     queryFn: almacenesApi.getTiposAlmacen,
-    staleTime: 1000 * 60 * 60, // 1 hora
+    staleTime: 1000 * 60 * 60,
+  });
+
+  // Consulta de categorías disponibles para asociar
+  const categoriasQuery = useQuery({
+    queryKey: ['productos-categorias'],
+    queryFn: almacenesApi.getCategorias,
   });
 
   // Mutaciones CRUD
@@ -77,10 +83,12 @@ export const useAlmacenes = (filters?: {
     almacenes: almacenesQuery.data ?? [],
     inventario: inventarioQuery.data ?? [],
     tipos: tiposQuery.data ?? [],
+    categoriasDisponibles: categoriasQuery.data ?? [],
 
     isLoading: almacenesQuery.isLoading || inventarioQuery.isLoading,
     isLoadingAlmacenes: almacenesQuery.isLoading,
     isLoadingInventario: inventarioQuery.isLoading,
+    isLoadingCategorias: categoriasQuery.isLoading,
 
     createAlmacen: createAlmacenMutation.mutateAsync,
     isCreatingAlmacen: createAlmacenMutation.isPending,

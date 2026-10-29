@@ -7,10 +7,10 @@ export const AlmacenesPage: React.FC = () => {
       {/* Encabezado */}
       <div>
         <h2 className="text-2xl font-bold text-slate-800">
-          Almacenes & Espacios de Infraestructura
+          Almacenes & Logística de Infraestructura
         </h2>
         <p className="text-sm text-slate-500 mt-1">
-          Control y clasificación de almacenes principales, depósitos de repuestos, áreas de tránsito, salas de racks y zonas de desecho.
+          Gestión centralizada de recepción y distribución de productos hacia sus depósitos correspondientes: comida y perecederos, insumos de limpieza, equipos de tecnología, papelería y mantenimiento.
         </p>
       </div>
 
@@ -19,4 +19,3 @@ export const AlmacenesPage: React.FC = () => {
     </div>
   );
 };
-

@@ -32,8 +32,24 @@ async def lifespan(app: FastAPI):
             with engine.begin() as conn:
                 conn.execute(text("ALTER TABLE almacenes ADD COLUMN IF NOT EXISTS tipo VARCHAR(50) DEFAULT 'GENERAL';"))
                 conn.execute(text("ALTER TABLE almacenes ADD COLUMN IF NOT EXISTS descripcion TEXT;"))
+                
+                # Semillar categorías base de infraestructura si no existen
+                check_cats = conn.execute(text("SELECT COUNT(*) FROM categorias")).scalar()
+                if check_cats == 0:
+                    conn.execute(text("""
+                        INSERT INTO categorias (nombre, codigo, descripcion, activo, created_at)
+                        VALUES 
+                        ('Comida y Perecederos', 'CAT-ALIM', 'Alimentos, refrigerios, café y perecederos', true, NOW()),
+                        ('Productos de Limpieza', 'CAT-LIMP', 'Detergentes, desinfectantes, papel e insumos de aseo', true, NOW()),
+                        ('Equipos de Tecnología', 'CAT-TEC', 'Computadoras, servidores, periféricos y electrónica', true, NOW()),
+                        ('Papelería y Oficina', 'CAT-PAP', 'Resmas de papel, útiles de escritorio, archivadores', true, NOW()),
+                        ('Mantenimiento y Ferretería', 'CAT-MANT', 'Herramientas, fontanería, electricidad y reparaciones', true, NOW()),
+                        ('Insumos Generales', 'CAT-GEN', 'Materiales y suministros varios de infraestructura', true, NOW())
+                        ON CONFLICT DO NOTHING;
+                    """))
+                    logger.info("Categorías base de infraestructura inicializadas.")
         except Exception as col_err:
-            logger.warning(f"Aviso al asegurar columnas en almacenes: {col_err}")
+            logger.warning(f"Aviso al asegurar columnas o categorías base en almacenes: {col_err}")
         logger.info("Modelos de Base de Datos sincronizados.")
     except Exception as e:
         logger.warning(f"No se pudo conectar inmediatamente a la BD (¿contenedor iniciando?): {e}")

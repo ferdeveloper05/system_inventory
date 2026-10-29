@@ -1,10 +1,16 @@
 export type AlmacenTipo =
-  | 'GENERAL'
-  | 'REPUESTOS'
-  | 'TRANSITO'
-  | 'DATACENTER'
-  | 'SEGURIDAD'
-  | 'DESECHO';
+  | 'ALIMENTOS'
+  | 'LIMPIEZA'
+  | 'TECNOLOGIA'
+  | 'PAPELERIA'
+  | 'MANTENIMIENTO'
+  | 'GENERAL';
+
+export interface CategoriaSimple {
+  id: number;
+  nombre: string;
+  codigo: string;
+}
 
 export interface Almacen {
   id: number;
@@ -19,6 +25,7 @@ export interface Almacen {
   total_productos?: number;
   stock_total?: number;
   porcentaje_ocupacion?: number;
+  categorias?: CategoriaSimple[];
 }
 
 export interface AlmacenCreate {
@@ -29,6 +36,7 @@ export interface AlmacenCreate {
   capacidad?: number;
   descripcion?: string;
   activo?: boolean;
+  ids_categorias?: number[];
 }
 
 export interface AlmacenUpdate {
@@ -39,6 +47,7 @@ export interface AlmacenUpdate {
   capacidad?: number;
   descripcion?: string;
   activo?: boolean;
+  ids_categorias?: number[];
 }
 
 export interface TipoAlmacenInfo {
@@ -78,66 +87,73 @@ export const TIPOS_ALMACEN_META: Record<
     iconBg: string;
     iconText: string;
     prefix: string;
+    defaultCategoryName: string;
   }
 > = {
-  GENERAL: {
-    label: 'Almacén Principal / Central',
-    description: 'Equipos principales, servidores, switches core y almacenamiento mayorista.',
-    badgeBg: 'bg-indigo-50',
-    badgeText: 'text-indigo-700',
-    badgeBorder: 'border-indigo-200',
-    iconBg: 'bg-indigo-100',
-    iconText: 'text-indigo-600',
-    prefix: 'ALM-PRI-',
-  },
-  REPUESTOS: {
-    label: 'Repuestos & Componentes',
-    description: 'Cables, patch cords, discos, memorias RAM, transceptores SFP y fuentes.',
+  ALIMENTOS: {
+    label: 'Comida & Perecederos',
+    description: 'Alimentos, refrigerios, café, bebidas e insumos perecederos de cafetería y comedor.',
     badgeBg: 'bg-emerald-50',
     badgeText: 'text-emerald-700',
     badgeBorder: 'border-emerald-200',
     iconBg: 'bg-emerald-100',
     iconText: 'text-emerald-600',
-    prefix: 'ALM-REP-',
+    prefix: 'ALM-ALIM-',
+    defaultCategoryName: 'Comida y Perecederos',
   },
-  TRANSITO: {
-    label: 'Tránsito & Recepción (Staging)',
-    description: 'Área de inspección, recepción de compras y pruebas antes de puesta en producción.',
+  LIMPIEZA: {
+    label: 'Productos de Limpieza & Aseo',
+    description: 'Detergentes, desinfectantes, papel higiénico, químicos de aseo e insumos sanitarios.',
+    badgeBg: 'bg-cyan-50',
+    badgeText: 'text-cyan-700',
+    badgeBorder: 'border-cyan-200',
+    iconBg: 'bg-cyan-100',
+    iconText: 'text-cyan-600',
+    prefix: 'ALM-LIMP-',
+    defaultCategoryName: 'Productos de Limpieza',
+  },
+  TECNOLOGIA: {
+    label: 'Equipos de Tecnología & TI',
+    description: 'Computadores, servidores, laptops, periféricos, cables, hardware y componentes electrónicos.',
+    badgeBg: 'bg-indigo-50',
+    badgeText: 'text-indigo-700',
+    badgeBorder: 'border-indigo-200',
+    iconBg: 'bg-indigo-100',
+    iconText: 'text-indigo-600',
+    prefix: 'ALM-TEC-',
+    defaultCategoryName: 'Equipos de Tecnología',
+  },
+  PAPELERIA: {
+    label: 'Papelería & Útiles de Oficina',
+    description: 'Hojas, carpetas, bolígrafos, archivadores, tóners de impresión y útiles de escritorio.',
     badgeBg: 'bg-amber-50',
     badgeText: 'text-amber-700',
     badgeBorder: 'border-amber-200',
     iconBg: 'bg-amber-100',
     iconText: 'text-amber-600',
-    prefix: 'ALM-TRA-',
+    prefix: 'ALM-PAP-',
+    defaultCategoryName: 'Papelería y Oficina',
   },
-  DATACENTER: {
-    label: 'Data Center / Sala de Racks',
-    description: 'Almacenes in-situ en cuartos de comunicaciones, PoPs o salas de servidores.',
-    badgeBg: 'bg-blue-50',
-    badgeText: 'text-blue-700',
-    badgeBorder: 'border-blue-200',
-    iconBg: 'bg-blue-100',
-    iconText: 'text-blue-600',
-    prefix: 'ALM-DAT-',
-  },
-  SEGURIDAD: {
-    label: 'Resguardo / Alta Seguridad',
-    description: 'Dispositivos criptográficos (HSM), licencias físicas, tarjetas y activos críticos.',
+  MANTENIMIENTO: {
+    label: 'Mantenimiento & Herramientas',
+    description: 'Herramientas, repuestos de fontanería, electricidad, pintura, tornillería e infraestructura física.',
     badgeBg: 'bg-purple-50',
     badgeText: 'text-purple-700',
     badgeBorder: 'border-purple-200',
     iconBg: 'bg-purple-100',
     iconText: 'text-purple-600',
-    prefix: 'ALM-SEG-',
+    prefix: 'ALM-MANT-',
+    defaultCategoryName: 'Mantenimiento y Ferretería',
   },
-  DESECHO: {
-    label: 'Bajas & Disposición Final (Scrap)',
-    description: 'Equipos obsoletos o averiados en espera de desincorporación, reciclaje o subasta.',
-    badgeBg: 'bg-rose-50',
-    badgeText: 'text-rose-700',
-    badgeBorder: 'border-rose-200',
-    iconBg: 'bg-rose-100',
-    iconText: 'text-rose-600',
-    prefix: 'ALM-BAJ-',
+  GENERAL: {
+    label: 'Almacén General / Recepción',
+    description: 'Área centralizada de infraestructura para acopio temporal, inspección y enrutamiento a almacenes.',
+    badgeBg: 'bg-slate-100',
+    badgeText: 'text-slate-700',
+    badgeBorder: 'border-slate-300',
+    iconBg: 'bg-slate-200',
+    iconText: 'text-slate-700',
+    prefix: 'ALM-GEN-',
+    defaultCategoryName: 'Insumos Generales',
   },
 };

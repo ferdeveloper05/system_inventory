@@ -1,5 +1,5 @@
 import apiClient from '../../../api/client';
-import { Almacen, AlmacenCreate, AlmacenUpdate, InventarioItem } from '../types';
+import { Almacen, AlmacenCreate, AlmacenUpdate, InventarioItem, CategoriaSimple } from '../types';
 
 export const almacenesApi = {
   getAlmacenes: async (params?: {
@@ -46,6 +46,11 @@ export const almacenesApi = {
 
   getTiposAlmacen: async (): Promise<any[]> => {
     const response = await apiClient.get<any[]>('/almacenes/tipos');
+    return response.data;
+  },
+
+  getCategorias: async (): Promise<CategoriaSimple[]> => {
+    const response = await apiClient.get<CategoriaSimple[]>('/productos/categorias');
     return response.data;
   },
 };

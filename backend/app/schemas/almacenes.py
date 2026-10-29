@@ -1,12 +1,18 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from app.schemas.base import BaseSchema
+
+
+class CategoriaSimple(BaseSchema):
+    id: int
+    nombre: str
+    codigo: str
 
 
 class AlmacenBase(BaseSchema):
     codigo: str
     nombre: str
-    tipo: str = "GENERAL"
+    tipo: str = "GENERAL"  # ALIMENTOS, LIMPIEZA, TECNOLOGIA, PAPELERIA, MANTENIMIENTO, GENERAL
     ubicacion: str
     capacidad: Optional[int] = None
     descripcion: Optional[str] = None
@@ -14,7 +20,7 @@ class AlmacenBase(BaseSchema):
 
 
 class AlmacenCreate(AlmacenBase):
-    pass
+    ids_categorias: Optional[List[int]] = None
 
 
 class AlmacenUpdate(BaseSchema):
@@ -25,6 +31,7 @@ class AlmacenUpdate(BaseSchema):
     capacidad: Optional[int] = None
     descripcion: Optional[str] = None
     activo: Optional[bool] = None
+    ids_categorias: Optional[List[int]] = None
 
 
 class AlmacenResponse(AlmacenBase):
@@ -33,3 +40,4 @@ class AlmacenResponse(AlmacenBase):
     total_productos: Optional[int] = 0
     stock_total: Optional[int] = 0
     porcentaje_ocupacion: Optional[float] = None
+    categorias: Optional[List[CategoriaSimple]] = []

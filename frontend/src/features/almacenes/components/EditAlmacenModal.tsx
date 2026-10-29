@@ -9,12 +9,13 @@ import {
   Package,
   AlignLeft,
   AlertCircle,
-  Cpu,
-  ArrowDownToLine,
-  Server,
-  ShieldCheck,
-  Trash2,
+  UtensilsCrossed,
+  Sparkles,
+  Laptop,
+  FileText,
+  Wrench,
   CheckCircle,
+  Tag,
 } from 'lucide-react';
 
 interface EditAlmacenModalProps {
@@ -28,7 +29,7 @@ export const EditAlmacenModal: React.FC<EditAlmacenModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { updateAlmacen, isUpdatingAlmacen } = useAlmacenes();
+  const { updateAlmacen, isUpdatingAlmacen, categoriasDisponibles } = useAlmacenes();
 
   const [formData, setFormData] = useState({
     codigo: '',
@@ -38,6 +39,7 @@ export const EditAlmacenModal: React.FC<EditAlmacenModalProps> = ({
     capacidad: '' as number | string,
     descripcion: '',
     activo: true,
+    ids_categorias: [] as number[],
   });
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -49,15 +51,31 @@ export const EditAlmacenModal: React.FC<EditAlmacenModalProps> = ({
         nombre: almacen.nombre,
         tipo: almacen.tipo || 'GENERAL',
         ubicacion: almacen.ubicacion,
-        capacidad: almacen.capacidad !== null && almacen.capacidad !== undefined ? almacen.capacidad : '',
+        capacidad:
+          almacen.capacidad !== null && almacen.capacidad !== undefined
+            ? almacen.capacidad
+            : '',
         descripcion: almacen.descripcion || '',
         activo: almacen.activo,
+        ids_categorias: almacen.categorias ? almacen.categorias.map((c) => c.id) : [],
       });
       setErrorMessage(null);
     }
   }, [almacen]);
 
   if (!isOpen || !almacen) return null;
+
+  const toggleCategoria = (catId: number) => {
+    setFormData((prev) => {
+      const exists = prev.ids_categorias.includes(catId);
+      return {
+        ...prev,
+        ids_categorias: exists
+          ? prev.ids_categorias.filter((id) => id !== catId)
+          : [...prev.ids_categorias, catId],
+      };
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,6 +92,7 @@ export const EditAlmacenModal: React.FC<EditAlmacenModalProps> = ({
           capacidad: formData.capacidad ? Number(formData.capacidad) : undefined,
           descripcion: formData.descripcion.trim() || undefined,
           activo: formData.activo,
+          ids_categorias: formData.ids_categorias,
         },
       });
       onClose();
@@ -88,18 +107,18 @@ export const EditAlmacenModal: React.FC<EditAlmacenModalProps> = ({
 
   const getTipoIcon = (tipo: AlmacenTipo) => {
     switch (tipo) {
+      case 'ALIMENTOS':
+        return <UtensilsCrossed className="w-4 h-4" />;
+      case 'LIMPIEZA':
+        return <Sparkles className="w-4 h-4" />;
+      case 'TECNOLOGIA':
+        return <Laptop className="w-4 h-4" />;
+      case 'PAPELERIA':
+        return <FileText className="w-4 h-4" />;
+      case 'MANTENIMIENTO':
+        return <Wrench className="w-4 h-4" />;
       case 'GENERAL':
         return <Warehouse className="w-4 h-4" />;
-      case 'REPUESTOS':
-        return <Cpu className="w-4 h-4" />;
-      case 'TRANSITO':
-        return <ArrowDownToLine className="w-4 h-4" />;
-      case 'DATACENTER':
-        return <Server className="w-4 h-4" />;
-      case 'SEGURIDAD':
-        return <ShieldCheck className="w-4 h-4" />;
-      case 'DESECHO':
-        return <Trash2 className="w-4 h-4" />;
       default:
         return <Warehouse className="w-4 h-4" />;
     }
@@ -119,7 +138,7 @@ export const EditAlmacenModal: React.FC<EditAlmacenModalProps> = ({
                 Editar Almacén #{almacen.id} - {almacen.nombre}
               </h3>
               <p className="text-xs text-slate-500">
-                Actualizar clasificación operativa, ubicación física y parámetros de capacidad.
+                Actualizar clasificación de suministro, categorías asociadas y capacidad física.
               </p>
             </div>
           </div>
@@ -143,7 +162,7 @@ export const EditAlmacenModal: React.FC<EditAlmacenModalProps> = ({
           {/* Selector de Tipo de Almacén */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-2">
-              Tipo de Almacén / Rol Operativo *
+              Línea de Suministro / Tipo de Almacén *
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
               {(Object.keys(TIPOS_ALMACEN_META) as AlmacenTipo[]).map((tipoKey) => {
@@ -181,11 +200,40 @@ export const EditAlmacenModal: React.FC<EditAlmacenModalProps> = ({
             </div>
           </div>
 
+          {/* Categorías vinculadas */}
+          {categoriasDisponibles.length > 0 && (
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center space-x-1.5">
+                <Tag className="w-3.5 h-3.5 text-slate-400" />
+                <span>Categorías de Producto Asignadas a este Almacén</span>
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {categoriasDisponibles.map((cat) => {
+                  const isChecked = formData.ids_categorias.includes(cat.id);
+                  return (
+                    <button
+                      type="button"
+                      key={cat.id}
+                      onClick={() => toggleCategoria(cat.id)}
+                      className={`text-xs px-2.5 py-1 rounded-lg border font-medium transition-colors ${
+                        isChecked
+                          ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                          : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
+                      }`}
+                    >
+                      {cat.nombre}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Código y Nombre */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Código de Almacén *
+                Código del Almacén *
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -289,7 +337,7 @@ export const EditAlmacenModal: React.FC<EditAlmacenModalProps> = ({
               <div className="flex items-center space-x-1.5">
                 <CheckCircle className="w-4 h-4 text-slate-500" />
                 <span className="text-xs font-semibold text-slate-700">
-                  Almacén activo para operaciones (Recepciones, Traslados y Solicitudes)
+                  Almacén activo para despachos, recepciones y transferencias
                 </span>
               </div>
             </label>
@@ -317,4 +365,3 @@ export const EditAlmacenModal: React.FC<EditAlmacenModalProps> = ({
     </div>
   );
 };
-
