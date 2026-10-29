@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import List, Optional, Any
 from sqlalchemy import String, Boolean, DateTime, ForeignKey, Integer, Numeric, Text, UniqueConstraint
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -69,12 +70,15 @@ class Productos(Base):
     stock_minimo: Mapped[int] = mapped_column(Integer, default=5, nullable=False)
     stock_maximo: Mapped[int] = mapped_column(Integer, default=1000, nullable=False)
     id_categoria: Mapped[int] = mapped_column(ForeignKey("categorias.id"), nullable=False)
+    id_almacen_predeterminado: Mapped[Optional[int]] = mapped_column(ForeignKey("almacenes.id"), nullable=True)
+    atributos: Mapped[Optional[Any]] = mapped_column(JSONB, nullable=True)
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     # Relaciones
     categoria: Mapped["Categorias"] = relationship("Categorias", back_populates="productos")
+    almacen_predeterminado: Mapped[Optional["Almacenes"]] = relationship("Almacenes", foreign_keys=[id_almacen_predeterminado])
     inventarios: Mapped[List["Inventario"]] = relationship("Inventario", back_populates="producto")
     detalles_orden: Mapped[List["Detalle_orden_compra"]] = relationship("Detalle_orden_compra", back_populates="producto")
     detalles_recepcion: Mapped[List["Detalle_recepcion"]] = relationship("Detalle_recepcion", back_populates="producto")

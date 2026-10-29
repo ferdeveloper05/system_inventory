@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Dict, Any, List
 from app.schemas.base import BaseSchema
 
 
@@ -25,9 +25,18 @@ class CategoriaUpdate(BaseSchema):
 class CategoriaResponse(CategoriaBase):
     id: int
     created_at: datetime
+    total_productos: Optional[int] = 0
 
 
 # Productos
+class AlmacenSimpleResponse(BaseSchema):
+    id: int
+    codigo: str
+    nombre: str
+    tipo: str
+    ubicacion: str
+
+
 class ProductoBase(BaseSchema):
     codigo: str
     nombre: str
@@ -36,6 +45,8 @@ class ProductoBase(BaseSchema):
     stock_minimo: int = 5
     stock_maximo: int = 1000
     id_categoria: int
+    id_almacen_predeterminado: Optional[int] = None
+    atributos: Optional[Dict[str, Any]] = None
     activo: bool = True
 
 
@@ -51,6 +62,8 @@ class ProductoUpdate(BaseSchema):
     stock_minimo: Optional[int] = None
     stock_maximo: Optional[int] = None
     id_categoria: Optional[int] = None
+    id_almacen_predeterminado: Optional[int] = None
+    atributos: Optional[Dict[str, Any]] = None
     activo: Optional[bool] = None
 
 
@@ -59,4 +72,5 @@ class ProductoResponse(ProductoBase):
     created_at: datetime
     updated_at: datetime
     categoria: Optional[CategoriaResponse] = None
-
+    almacen_predeterminado: Optional[AlmacenSimpleResponse] = None
+    total_stock: Optional[int] = 0
