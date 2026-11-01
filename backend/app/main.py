@@ -66,6 +66,33 @@ async def lifespan(app: FastAPI):
                         ON CONFLICT DO NOTHING;
                     """))
                     logger.info("Almacenes base de infraestructura inicializados.")
+
+                # Semillar departamento y empleados de infraestructura si no existen
+                check_deps = conn.execute(text("SELECT COUNT(*) FROM departamentos")).scalar()
+                if check_deps == 0:
+                    conn.execute(text("""
+                        INSERT INTO departamentos (nombre, descripcion, activo, created_at)
+                        VALUES 
+                        ('Infraestructura & Operaciones', 'Gestión de almacenes, despachos y suministros', true, NOW()),
+                        ('Tecnología & Sistemas', 'Mantenimiento y soporte de equipos TI', true, NOW()),
+                        ('Servicios Generales', 'Mantenimiento, limpieza y aprovisionamiento', true, NOW())
+                        ON CONFLICT DO NOTHING;
+                    """))
+                    logger.info("Departamentos base inicializados.")
+
+                check_emps = conn.execute(text("SELECT COUNT(*) FROM empleados")).scalar()
+                if check_emps == 0:
+                    dep_infra = conn.execute(text("SELECT id FROM departamentos ORDER BY id ASC LIMIT 1")).scalar()
+                    if dep_infra:
+                        conn.execute(text(f"""
+                            INSERT INTO empleados (nombre, apellido, email, cargo, id_departamento, activo, created_at)
+                            VALUES 
+                            ('Carlos', 'Mendoza', 'carlos.mendoza@empresa.com', 'Coordinador de Recepción y Almacén', {dep_infra}, true, NOW()),
+                            ('Elena', 'Vargas', 'elena.vargas@empresa.com', 'Especialista de Logística e Inventarios', {dep_infra}, true, NOW()),
+                            ('Roberto', 'Gómez', 'roberto.gomez@empresa.com', 'Técnico de Infraestructura', {dep_infra}, true, NOW())
+                            ON CONFLICT DO NOTHING;
+                        """))
+                        logger.info("Empleados base de recepción inicializados.")
         except Exception as col_err:
             logger.warning(f"Aviso al asegurar columnas o categorías base en almacenes: {col_err}")
         logger.info("Modelos de Base de Datos sincronizados.")

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAlmacenes } from '../features/almacenes/hooks/useAlmacenes';
-import { Warehouse, Boxes, MapPin } from 'lucide-react';
+import { Warehouse, Boxes, MapPin, ArrowDownToLine } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export const InventarioPage: React.FC = () => {
   const [selectedAlmacen, setSelectedAlmacen] = useState<number | undefined>(undefined);
@@ -18,21 +19,32 @@ export const InventarioPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Filtro por Almacén */}
-        <div className="flex items-center space-x-2">
-          <Warehouse className="w-5 h-5 text-slate-400" />
-          <select
-            value={selectedAlmacen || ''}
-            onChange={(e) => setSelectedAlmacen(e.target.value ? Number(e.target.value) : undefined)}
-            className="border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+        <div className="flex items-center space-x-3">
+          {/* Filtro por Almacén */}
+          <div className="flex items-center space-x-2">
+            <Warehouse className="w-5 h-5 text-slate-400" />
+            <select
+              value={selectedAlmacen || ''}
+              onChange={(e) => setSelectedAlmacen(e.target.value ? Number(e.target.value) : undefined)}
+              className="border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+            >
+              <option value="">Todos los Almacenes</option>
+              {almacenes.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.nombre} ({a.codigo})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Botón de Entrada de Mercancía */}
+          <Link
+            to={`/recepciones?crear=true${selectedAlmacen ? `&almacen=${selectedAlmacen}` : ''}`}
+            className="inline-flex items-center space-x-1.5 px-3.5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors shadow-2xs"
           >
-            <option value="">Todos los Almacenes</option>
-            {almacenes.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.nombre} ({a.codigo})
-              </option>
-            ))}
-          </select>
+            <ArrowDownToLine className="w-3.5 h-3.5" />
+            <span>Registrar Entrada</span>
+          </Link>
         </div>
       </div>
 

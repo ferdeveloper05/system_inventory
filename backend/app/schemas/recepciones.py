@@ -46,3 +46,15 @@ class RecepcionResponse(RecepcionBase):
     empleado_recibe: Optional[EmpleadoResponse] = None
     detalles: List[DetalleRecepcionResponse] = []
 
+
+class RecepcionAnular(BaseSchema):
+    motivo: Optional[str] = None
+
+
+class RecepcionStats(BaseSchema):
+    total_recepciones: int
+    total_items_recibidos: int
+    total_completadas: int
+    total_anuladas: int
+    recepciones_hoy: int
+

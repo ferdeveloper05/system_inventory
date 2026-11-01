@@ -16,7 +16,9 @@ import {
   Sparkles,
   FileText,
   Wrench,
+  ArrowDownToLine,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface ProductoDetailModalProps {
   producto: Producto | null;
@@ -170,7 +172,17 @@ export const ProductoDetailModal: React.FC<ProductoDetailModalProps> = ({
           )}
 
           {/* Pie */}
-          <div className="flex justify-end pt-3 border-t border-slate-100">
+          <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+            <Link
+              to={`/recepciones?crear=true&producto=${producto.id}${
+                producto.id_almacen_predeterminado ? `&almacen=${producto.id_almacen_predeterminado}` : ''
+              }`}
+              className="inline-flex items-center space-x-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors shadow-2xs"
+            >
+              <ArrowDownToLine className="w-3.5 h-3.5" />
+              <span>Recibir Stock en Almacén</span>
+            </Link>
+
             <button
               onClick={onClose}
               className="px-4 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"

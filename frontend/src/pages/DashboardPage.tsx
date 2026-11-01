@@ -2,7 +2,8 @@ import React from 'react';
 import { useAlmacenes } from '../features/almacenes/hooks/useAlmacenes';
 import { useRecepciones } from '../features/recepciones/hooks/useRecepciones';
 import { useSolicitudes } from '../features/solicitudes/hooks/useSolicitudes';
-import { Boxes, Warehouse, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
+import { Boxes, Warehouse, ArrowDownToLine, ArrowUpFromLine, Plus, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export const DashboardPage: React.FC = () => {
   const { almacenes, inventario, isLoading: loadingAlm } = useAlmacenes();
@@ -51,7 +52,25 @@ export const DashboardPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Últimas Recepciones */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200/80 p-6">
-          <h3 className="text-base font-semibold text-slate-800 mb-4">Últimas Recepciones (Entradas)</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-semibold text-slate-800">Últimas Recepciones (Entradas)</h3>
+            <div className="flex items-center space-x-2">
+              <Link
+                to="/recepciones?crear=true"
+                className="inline-flex items-center space-x-1 px-2.5 py-1 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors border border-emerald-200"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Nueva Recepción</span>
+              </Link>
+              <Link
+                to="/recepciones"
+                className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center space-x-1"
+              >
+                <span>Ver todas</span>
+                <ExternalLink className="w-3 h-3" />
+              </Link>
+            </div>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm text-slate-600">
               <thead className="bg-slate-50 text-slate-700 uppercase font-medium text-xs">
@@ -63,11 +82,21 @@ export const DashboardPage: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {recepciones.slice(0, 5).map((r) => (
-                  <tr key={r.id}>
-                    <td className="px-4 py-3 font-medium text-slate-900">{r.numero_recepcion}</td>
-                    <td className="px-4 py-3">{r.almacen?.nombre || `ID ${r.id_almacen}`}</td>
+                  <tr key={r.id} className="hover:bg-slate-50/50">
+                    <td className="px-4 py-3 font-medium text-slate-900">
+                      <Link to="/recepciones" className="hover:text-emerald-700 font-mono text-xs">
+                        {r.numero_recepcion}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3 text-xs">{r.almacen?.nombre || `ID ${r.id_almacen}`}</td>
                     <td className="px-4 py-3">
-                      <span className="px-2 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800">
+                      <span className={`px-2 py-0.5 text-[11px] font-semibold rounded-full ${
+                        r.estado === 'COMPLETADA'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : r.estado === 'ANULADA'
+                          ? 'bg-rose-100 text-rose-800'
+                          : 'bg-amber-100 text-amber-800'
+                      }`}>
                         {r.estado}
                       </span>
                     </td>

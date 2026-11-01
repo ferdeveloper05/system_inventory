@@ -1,85 +1,140 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useRecepciones } from '../features/recepciones/hooks/useRecepciones';
-import { ArrowDownToLine, Calendar, UserCheck } from 'lucide-react';
+import { Recepcion } from '../features/recepciones/types';
+import { RecepcionesStats } from '../features/recepciones/components/RecepcionesStats';
+import { RecepcionesList } from '../features/recepciones/components/RecepcionesList';
+import { CreateRecepcionModal } from '../features/recepciones/components/CreateRecepcionModal';
+import { RecepcionDetailModal } from '../features/recepciones/components/RecepcionDetailModal';
+import { AnularRecepcionModal } from '../features/recepciones/components/AnularRecepcionModal';
 
 export const RecepcionesPage: React.FC = () => {
-  const { recepciones, isLoading } = useRecepciones();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Estados de modales
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [selectedRecepcion, setSelectedRecepcion] = useState<Recepcion | null>(null);
+  const [anularTarget, setAnularTarget] = useState<Recepcion | null>(null);
+
+  // Parámetros preseleccionados pasados por URL (interconexión desde Almacenes o Productos)
+  const [defaultAlmacenId, setDefaultAlmacenId] = useState<number | undefined>(undefined);
+  const [defaultProductoId, setDefaultProductoId] = useState<number | undefined>(undefined);
+
+  // Filtros
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedAlmacen, setSelectedAlmacen] = useState('ALL');
+  const [selectedEstado, setSelectedEstado] = useState('ALL');
+
+  const { stats, isLoadingStats, anularRecepcion, isAnulando } = useRecepciones();
+
+  // Detectar parámetros de URL al montar
+  useEffect(() => {
+    const shouldCreate = searchParams.get('crear');
+    const almacenParam = searchParams.get('almacen');
+    const productoParam = searchParams.get('producto');
+
+    if (almacenParam) {
+      const almId = Number(almacenParam);
+      if (!isNaN(almId)) {
+        setDefaultAlmacenId(almId);
+        setSelectedAlmacen(String(almId));
+      }
+    }
+
+    if (productoParam) {
+      const prodId = Number(productoParam);
+      if (!isNaN(prodId)) {
+        setDefaultProductoId(prodId);
+      }
+    }
+
+    if (shouldCreate === 'true') {
+      setIsCreateOpen(true);
+      // Limpiar query param para evitar reapertura accidental al refrescar
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('crear');
+      setSearchParams(newParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
+  const handleOpenDetail = (recepcion: Recepcion) => {
+    setSelectedRecepcion(recepcion);
+  };
+
+  const handleOpenAnular = (recepcion: Recepcion) => {
+    setAnularTarget(recepcion);
+  };
+
+  const handleConfirmAnular = async (motivo: string) => {
+    if (!anularTarget) return;
+    await anularRecepcion({ id: anularTarget.id, motivo });
+    // Si estaba abierto el detalle de esta misma recepción, actualizar estado local
+    if (selectedRecepcion && selectedRecepcion.id === anularTarget.id) {
+      setSelectedRecepcion({ ...selectedRecepcion, estado: 'ANULADA' });
+    }
+  };
 
   return (
     <div className="space-y-6">
+      {/* Encabezado */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Entradas & Recepciones</h2>
+          <h2 className="text-2xl font-bold text-slate-800 tracking-tight">
+            Entradas & Recepciones de Mercancía
+          </h2>
           <p className="text-sm text-slate-500 mt-1">
-            Registro de recepciones de activo físico y órdenes de compra.
+            Gestión y registro de aprovisionamiento, inspección de insumos e incremento de inventario en infraestructura.
           </p>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200/80 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-slate-600">
-            <thead className="bg-slate-50 text-slate-700 uppercase font-medium text-xs border-b border-slate-200">
-              <tr>
-                <th className="px-6 py-4">Nº Recepción</th>
-                <th className="px-6 py-4">Almacén Destino</th>
-                <th className="px-6 py-4">Receptor</th>
-                <th className="px-6 py-4">Fecha</th>
-                <th className="px-6 py-4">Estado</th>
-                <th className="px-6 py-4 text-center">Items</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={6} className="text-center py-8 text-slate-400">
-                    Cargando recepciones...
-                  </td>
-                </tr>
-              ) : recepciones.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="text-center py-8 text-slate-400">
-                    No se han registrado recepciones aún.
-                  </td>
-                </tr>
-              ) : (
-                recepciones.map((r) => (
-                  <tr key={r.id} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="px-6 py-4 font-medium text-slate-900 flex items-center space-x-2">
-                      <ArrowDownToLine className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <span>{r.numero_recepcion}</span>
-                    </td>
-                    <td className="px-6 py-4">{r.almacen?.nombre || `Almacén #${r.id_almacen}`}</td>
-                    <td className="px-6 py-4 text-slate-700 flex items-center space-x-1.5">
-                      <UserCheck className="w-4 h-4 text-slate-400" />
-                      <span>
-                        {r.empleado_recibe
-                          ? `${r.empleado_recibe.nombre} ${r.empleado_recibe.apellido}`
-                          : `Empleado #${r.id_empleado_recibe}`}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-slate-500">
-                      <div className="flex items-center space-x-1">
-                        <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                        <span>{new Date(r.fecha_recepcion).toLocaleDateString()}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
-                        {r.estado}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center font-medium text-slate-800">
-                      {r.detalles?.length || 0}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {/* Métricas KPI */}
+      <RecepcionesStats stats={stats} isLoading={isLoadingStats} />
+
+      {/* Lista con Filtros y Acciones */}
+      <RecepcionesList
+        onOpenCreate={() => setIsCreateOpen(true)}
+        onOpenDetail={handleOpenDetail}
+        onOpenAnular={handleOpenAnular}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        selectedAlmacen={selectedAlmacen}
+        setSelectedAlmacen={setSelectedAlmacen}
+        selectedEstado={selectedEstado}
+        setSelectedEstado={setSelectedEstado}
+      />
+
+      {/* Modal: Crear Recepción */}
+      <CreateRecepcionModal
+        isOpen={isCreateOpen}
+        onClose={() => {
+          setIsCreateOpen(false);
+          setDefaultAlmacenId(undefined);
+          setDefaultProductoId(undefined);
+        }}
+        defaultAlmacenId={defaultAlmacenId}
+        defaultProductoId={defaultProductoId}
+      />
+
+      {/* Modal: Detalle / Albarán de Recepción */}
+      <RecepcionDetailModal
+        recepcion={selectedRecepcion}
+        isOpen={!!selectedRecepcion}
+        onClose={() => setSelectedRecepcion(null)}
+        onAnular={(rec) => {
+          setSelectedRecepcion(null);
+          setAnularTarget(rec);
+        }}
+      />
+
+      {/* Modal: Confirmación de Anulación */}
+      <AnularRecepcionModal
+        recepcion={anularTarget}
+        isOpen={!!anularTarget}
+        isLoading={isAnulando}
+        onClose={() => setAnularTarget(null)}
+        onConfirm={handleConfirmAnular}
+      />
     </div>
   );
 };
-
