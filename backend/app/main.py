@@ -34,6 +34,10 @@ async def lifespan(app: FastAPI):
                 conn.execute(text("ALTER TABLE almacenes ADD COLUMN IF NOT EXISTS descripcion TEXT;"))
                 conn.execute(text("ALTER TABLE productos ADD COLUMN IF NOT EXISTS id_almacen_predeterminado INTEGER REFERENCES almacenes(id);"))
                 conn.execute(text("ALTER TABLE productos ADD COLUMN IF NOT EXISTS atributos JSONB DEFAULT '{}'::jsonb;"))
+                conn.execute(text("ALTER TABLE recepciones ADD COLUMN IF NOT EXISTS fecha_recepcion TIMESTAMP DEFAULT NOW();"))
+                conn.execute(text("ALTER TABLE recepciones ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW();"))
+                conn.execute(text("ALTER TABLE detalle_recepcion ADD COLUMN IF NOT EXISTS estado_producto VARCHAR(50) DEFAULT 'CONFORME';"))
+                conn.execute(text("ALTER TABLE detalle_recepcion ADD COLUMN IF NOT EXISTS observaciones TEXT;"))
                 
                 # Semillar categorías base de infraestructura si no existen
                 check_cats = conn.execute(text("SELECT COUNT(*) FROM categorias")).scalar()

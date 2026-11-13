@@ -6,10 +6,12 @@ from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app.core.database import get_db
 from app.core.security import get_current_user
-from app.models.acceso import Usuarios
+from app.models.acceso import Usuarios, Empleados
+from app.models.catalogo import Productos
 from app.models.compras import Recepciones, Detalle_recepcion
 from app.schemas.recepciones import (
     RecepcionCreate,
+    RecepcionUpdate,
     RecepcionResponse,
     RecepcionAnular,
     RecepcionStats,
@@ -17,6 +19,27 @@ from app.schemas.recepciones import (
 from app.services.recepcion_service import recepcion_service
 
 router = APIRouter()
+
+
+def check_es_administrador(user: Usuarios) -> bool:
+    """Verifica si el usuario autenticado tiene privilegios de administrador o superusuario."""
+    if user.is_superuser:
+        return True
+    if user.rol and user.rol.nombre:
+        rol_clean = user.rol.nombre.strip().upper()
+        if rol_clean in ["ADMINISTRADOR", "ADMIN", "SUPERADMIN"]:
+            return True
+    return False
+
+
+def require_admin(current_user: Usuarios = Depends(get_current_user)) -> Usuarios:
+    """Dependencia que restringe endpoints únicamente a usuarios con rol Administrador."""
+    if not check_es_administrador(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Operación no autorizada: Solo los administradores tienen permisos para editar o eliminar recepciones."
+        )
+    return current_user
 
 
 @router.get("/", response_model=List[RecepcionResponse], summary="Listar recepciones de inventario")
@@ -37,8 +60,10 @@ def list_recepciones(
         db.query(Recepciones)
         .options(
             joinedload(Recepciones.almacen),
-            joinedload(Recepciones.empleado_recibe),
-            selectinload(Recepciones.detalles).joinedload(Detalle_recepcion.producto)
+            joinedload(Recepciones.empleado_recibe).joinedload(Empleados.departamento),
+            selectinload(Recepciones.detalles)
+            .joinedload(Detalle_recepcion.producto)
+            .joinedload(Productos.categoria),
         )
     )
 
@@ -114,7 +139,7 @@ def get_recepcion(
     if not recepcion:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Recepción con ID {id_recepcion} no encontrada."
+            detail=f"Recepción con ID #{id_recepcion} no encontrada."
         )
     return recepcion
 
@@ -153,4 +178,42 @@ def anular_recepcion(
         id_recepcion=id_recepcion,
         id_usuario=current_user.id,
         motivo=motivo
+    )
+
+
+@router.put("/{id_recepcion}", response_model=RecepcionResponse, summary="Actualizar recepción (Solo Administrador)")
+def update_recepcion(
+    id_recepcion: int,
+    recepcion_in: RecepcionUpdate,
+    db: Session = Depends(get_db),
+    current_admin: Usuarios = Depends(require_admin)
+):
+    """
+    Permite al administrador modificar una recepción existente, corrigiendo
+    el almacén destino, el funcionario responsable, las observaciones o los productos.
+    El inventario y los movimientos de Kardex son reconciliados de forma atómica.
+    """
+    return recepcion_service.actualizar_recepcion(
+        db=db,
+        id_recepcion=id_recepcion,
+        recepcion_in=recepcion_in,
+        id_usuario=current_admin.id
+    )
+
+
+@router.delete("/{id_recepcion}", summary="Eliminar recepción completamente (Solo Administrador)")
+def delete_recepcion(
+    id_recepcion: int,
+    db: Session = Depends(get_db),
+    current_admin: Usuarios = Depends(require_admin)
+):
+    """
+    Elimina definitivamente una recepción del sistema.
+    Reversa de manera segura el stock físico del almacén destino si estaba completada
+    y registra el evento en la bitácora de auditoría.
+    """
+    return recepcion_service.eliminar_recepcion(
+        db=db,
+        id_recepcion=id_recepcion,
+        id_usuario=current_admin.id
     )

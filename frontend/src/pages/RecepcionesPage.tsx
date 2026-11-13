@@ -7,6 +7,8 @@ import { RecepcionesList } from '../features/recepciones/components/RecepcionesL
 import { CreateRecepcionModal } from '../features/recepciones/components/CreateRecepcionModal';
 import { RecepcionDetailModal } from '../features/recepciones/components/RecepcionDetailModal';
 import { AnularRecepcionModal } from '../features/recepciones/components/AnularRecepcionModal';
+import { EditRecepcionModal } from '../features/recepciones/components/EditRecepcionModal';
+import { DeleteRecepcionModal } from '../features/recepciones/components/DeleteRecepcionModal';
 
 export const RecepcionesPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -15,6 +17,8 @@ export const RecepcionesPage: React.FC = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedRecepcion, setSelectedRecepcion] = useState<Recepcion | null>(null);
   const [anularTarget, setAnularTarget] = useState<Recepcion | null>(null);
+  const [editTarget, setEditTarget] = useState<Recepcion | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Recepcion | null>(null);
 
   // Parámetros preseleccionados pasados por URL (interconexión desde Almacenes o Productos)
   const [defaultAlmacenId, setDefaultAlmacenId] = useState<number | undefined>(undefined);
@@ -96,6 +100,8 @@ export const RecepcionesPage: React.FC = () => {
         onOpenCreate={() => setIsCreateOpen(true)}
         onOpenDetail={handleOpenDetail}
         onOpenAnular={handleOpenAnular}
+        onOpenEdit={(rec) => setEditTarget(rec)}
+        onOpenDelete={(rec) => setDeleteTarget(rec)}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         selectedAlmacen={selectedAlmacen}
@@ -125,6 +131,14 @@ export const RecepcionesPage: React.FC = () => {
           setSelectedRecepcion(null);
           setAnularTarget(rec);
         }}
+        onEdit={(rec) => {
+          setSelectedRecepcion(null);
+          setEditTarget(rec);
+        }}
+        onDelete={(rec) => {
+          setSelectedRecepcion(null);
+          setDeleteTarget(rec);
+        }}
       />
 
       {/* Modal: Confirmación de Anulación */}
@@ -134,6 +148,20 @@ export const RecepcionesPage: React.FC = () => {
         isLoading={isAnulando}
         onClose={() => setAnularTarget(null)}
         onConfirm={handleConfirmAnular}
+      />
+
+      {/* Modal: Edición de Recepción y Reasignación de Almacén (Solo Administrador) */}
+      <EditRecepcionModal
+        recepcion={editTarget}
+        isOpen={!!editTarget}
+        onClose={() => setEditTarget(null)}
+      />
+
+      {/* Modal: Eliminación Completa de Recepción (Solo Administrador) */}
+      <DeleteRecepcionModal
+        recepcion={deleteTarget}
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
       />
     </div>
   );

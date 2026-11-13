@@ -24,6 +24,13 @@ interface AuthState {
 const TOKEN_KEY = 'inventory_auth_token';
 const USER_KEY = 'inventory_auth_user';
 
+export const isUserAdmin = (user: User | null): boolean => {
+  if (!user) return false;
+  if (user.is_superuser) return true;
+  const role = (user.rol_nombre || '').trim().toUpperCase();
+  return ['ADMINISTRADOR', 'ADMIN', 'SUPERADMIN'].includes(role);
+};
+
 export const useAuthStore = create<AuthState>((set) => {
   // Inicializar estado desde localStorage si existe
   const initialToken = localStorage.getItem(TOKEN_KEY);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRecepciones } from '../hooks/useRecepciones';
 import { AlmacenRef, EmpleadoRef, ProductoSimple } from '../types';
 import {
@@ -59,48 +59,61 @@ export const CreateRecepcionModal: React.FC<CreateRecepcionModalProps> = ({
   const [items, setItems] = useState<ItemRow[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Inicializar valores al abrir el modal
+  // Bandera para inicializar una sola vez al abrir y evitar resetear campos en re-render
+  const isInitializedRef = useRef(false);
+
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !isInitializedRef.current) {
+      isInitializedRef.current = true;
       setNumeroRecepcion(generateNumeroRecepcion());
       setErrorMessage(null);
       setObservaciones('');
       setIdOrdenCompra('');
       setEstado('COMPLETADA');
+    }
+    if (!isOpen) {
+      isInitializedRef.current = false;
+      setErrorMessage(null);
+    }
+  }, [isOpen]);
 
-      // Almacén por defecto
-      if (defaultAlmacenId) {
+  // Sincronizar almacén por defecto cuando carguen los almacenes
+  useEffect(() => {
+    if (isOpen && almacenes.length > 0) {
+      if (defaultAlmacenId && almacenes.some((a) => a.id === defaultAlmacenId)) {
         setIdAlmacen(defaultAlmacenId);
-      } else if (almacenes.length > 0 && idAlmacen === 0) {
+      } else if (!idAlmacen || !almacenes.some((a) => a.id === idAlmacen)) {
         setIdAlmacen(almacenes[0].id);
       }
+    }
+  }, [isOpen, almacenes, defaultAlmacenId, idAlmacen]);
 
-      // Empleado por defecto
-      if (empleados.length > 0 && idEmpleado === 0) {
+  // Sincronizar empleado por defecto cuando carguen los empleados
+  useEffect(() => {
+    if (isOpen && empleados.length > 0) {
+      if (!idEmpleado || !empleados.some((e) => e.id === idEmpleado)) {
         setIdEmpleado(empleados[0].id);
       }
-
-      // Ítem inicial por defecto
-      const initialProdId = defaultProductoId
-        ? defaultProductoId
-        : productos.length > 0
-        ? productos[0].id
-        : 0;
-
-      if (initialProdId > 0) {
-        setItems([
-          {
-            id_producto: initialProdId,
-            cantidad_recibida: 10,
-            estado_producto: 'CONFORME',
-            observaciones: 'Llegada en buen estado',
-          },
-        ]);
-      } else {
-        setItems([]);
-      }
     }
-  }, [isOpen, almacenes, empleados, productos, defaultAlmacenId, defaultProductoId]);
+  }, [isOpen, empleados, idEmpleado]);
+
+  // Sincronizar ítem inicial cuando carguen los productos
+  useEffect(() => {
+    if (isOpen && productos.length > 0 && items.length === 0) {
+      const initialProd = defaultProductoId
+        ? productos.find((p) => p.id === defaultProductoId) || productos[0]
+        : productos[0];
+
+      setItems([
+        {
+          id_producto: initialProd.id,
+          cantidad_recibida: 10,
+          estado_producto: 'CONFORME',
+          observaciones: 'Llegada en buen estado',
+        },
+      ]);
+    }
+  }, [isOpen, productos, defaultProductoId, items.length]);
 
   if (!isOpen) return null;
 
@@ -143,12 +156,12 @@ export const CreateRecepcionModal: React.FC<CreateRecepcionModalProps> = ({
     e.preventDefault();
     setErrorMessage(null);
 
-    if (!idAlmacen) {
+    if (!idAlmacen || Number(idAlmacen) <= 0) {
       setErrorMessage('Por favor seleccione un almacén de destino.');
       return;
     }
 
-    if (!idEmpleado) {
+    if (!idEmpleado || Number(idEmpleado) <= 0) {
       setErrorMessage('Por favor seleccione el empleado responsable que recibe la mercancía.');
       return;
     }
@@ -160,8 +173,8 @@ export const CreateRecepcionModal: React.FC<CreateRecepcionModalProps> = ({
 
     // Validar cantidades
     for (const it of items) {
-      if (!it.id_producto) {
-        setErrorMessage('Todos los ítems deben tener un producto seleccionado.');
+      if (!it.id_producto || Number(it.id_producto) <= 0) {
+        setErrorMessage('Todos los ítems deben tener un producto válido seleccionado.');
         return;
       }
       if (Number(it.cantidad_recibida) <= 0) {
@@ -170,14 +183,30 @@ export const CreateRecepcionModal: React.FC<CreateRecepcionModalProps> = ({
       }
     }
 
+    // Procesar referencia a Orden de Compra de manera segura
+    let parsedOcId: number | undefined = undefined;
+    let finalObservaciones = observaciones.trim();
+
+    if (idOrdenCompra.trim()) {
+      const num = Number(idOrdenCompra.trim());
+      if (!isNaN(num) && num > 0) {
+        parsedOcId = num;
+      } else {
+        const refTexto = `Ref. Doc/OC: ${idOrdenCompra.trim()}`;
+        finalObservaciones = finalObservaciones
+          ? `${finalObservaciones}\n${refTexto}`
+          : refTexto;
+      }
+    }
+
     try {
       await createRecepcion({
         numero_recepcion: numeroRecepcion.trim().toUpperCase(),
         id_almacen: Number(idAlmacen),
         id_empleado_recibe: Number(idEmpleado),
-        id_orden_compra: idOrdenCompra.trim() ? Number(idOrdenCompra) : undefined,
+        id_orden_compra: parsedOcId,
         estado: estado,
-        observaciones: observaciones.trim() || undefined,
+        observaciones: finalObservaciones || undefined,
         detalles: items.map((it) => ({
           id_producto: Number(it.id_producto),
           cantidad_recibida: Number(it.cantidad_recibida),
@@ -188,12 +217,19 @@ export const CreateRecepcionModal: React.FC<CreateRecepcionModalProps> = ({
 
       onClose();
     } catch (err: any) {
-      setErrorMessage(
+      let detailMsg = '';
+      if (err?.response?.data?.errors && Array.isArray(err.response.data.errors)) {
+        detailMsg = err.response.data.errors
+          .map((e: any) => `${e.loc?.slice(-1)[0] || 'Campo'}: ${e.msg}`)
+          .join(', ');
+      }
+      const msg =
+        detailMsg ||
+        err?.response?.data?.detail ||
         err?.response?.data?.message ||
-          err?.response?.data?.detail ||
-          err?.message ||
-          'Error al registrar la recepción de mercancía.'
-      );
+        err?.message ||
+        'Error al registrar la recepción de mercancía.';
+      setErrorMessage(msg);
     }
   };
 
@@ -271,7 +307,7 @@ export const CreateRecepcionModal: React.FC<CreateRecepcionModalProps> = ({
                 </label>
                 <select
                   required
-                  value={idAlmacen}
+                  value={idAlmacen || ''}
                   onChange={(e) => setIdAlmacen(Number(e.target.value))}
                   className="block w-full px-3 py-2 text-sm border border-emerald-300 rounded-lg bg-white font-medium text-slate-800 focus:ring-emerald-500 focus:border-emerald-500 shadow-2xs"
                 >
@@ -297,7 +333,7 @@ export const CreateRecepcionModal: React.FC<CreateRecepcionModalProps> = ({
                 </label>
                 <select
                   required
-                  value={idEmpleado}
+                  value={idEmpleado || ''}
                   onChange={(e) => setIdEmpleado(Number(e.target.value))}
                   className="block w-full px-3 py-2 text-sm border border-indigo-300 rounded-lg bg-white font-medium text-slate-800 focus:ring-indigo-500 focus:border-indigo-500 shadow-2xs"
                 >
@@ -315,13 +351,13 @@ export const CreateRecepcionModal: React.FC<CreateRecepcionModalProps> = ({
               {/* Orden de Compra */}
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1">
-                  Nº Orden de Compra (Opcional)
+                  Nº Referencia / Orden de Compra (Opcional)
                 </label>
                 <input
-                  type="number"
+                  type="text"
                   value={idOrdenCompra}
                   onChange={(e) => setIdOrdenCompra(e.target.value)}
-                  placeholder="Ej: 1045 (dejar vacío si es ingreso directo)"
+                  placeholder="Ej: OC-1045 o 1045 (opcional)"
                   className="block w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-indigo-500 focus:border-indigo-500"
                 />
               </div>

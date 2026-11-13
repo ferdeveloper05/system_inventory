@@ -83,6 +83,16 @@ export interface RecepcionCreatePayload {
   detalles: DetalleRecepcionInput[];
 }
 
+export interface RecepcionUpdatePayload {
+  numero_recepcion?: string;
+  id_orden_compra?: number;
+  id_almacen?: number;
+  id_empleado_recibe?: number;
+  estado?: string;
+  observaciones?: string;
+  detalles?: DetalleRecepcionInput[];
+}
+
 export interface RecepcionStats {
   total_recepciones: number;
   total_items_recibidos: number;

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { recepcionesApi } from '../api/recepcionesApi';
-import { RecepcionCreatePayload, RecepcionFilterParams } from '../types';
+import { RecepcionCreatePayload, RecepcionUpdatePayload, RecepcionFilterParams } from '../types';
 
 export const useRecepciones = (filters?: RecepcionFilterParams) => {
   const queryClient = useQueryClient();
@@ -32,15 +32,34 @@ export const useRecepciones = (filters?: RecepcionFilterParams) => {
   });
 
   // Mutaciones
+  const invalidateAllRelatedQueries = () => {
+    queryClient.invalidateQueries({ queryKey: ['recepciones'] });
+    queryClient.invalidateQueries({ queryKey: ['recepciones-stats'] });
+    queryClient.invalidateQueries({ queryKey: ['inventario'] });
+    queryClient.invalidateQueries({ queryKey: ['productos'] });
+    queryClient.invalidateQueries({ queryKey: ['movimientos'] });
+    queryClient.invalidateQueries({ queryKey: ['almacenes'] });
+  };
+
   const createMutation = useMutation({
     mutationFn: (payload: RecepcionCreatePayload) => recepcionesApi.createRecepcion(payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['recepciones'] });
-      queryClient.invalidateQueries({ queryKey: ['recepciones-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['inventario'] });
-      queryClient.invalidateQueries({ queryKey: ['productos'] });
-      queryClient.invalidateQueries({ queryKey: ['movimientos'] });
-      queryClient.invalidateQueries({ queryKey: ['almacenes'] });
+      invalidateAllRelatedQueries();
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, payload }: { id: number; payload: RecepcionUpdatePayload }) =>
+      recepcionesApi.updateRecepcion(id, payload),
+    onSuccess: () => {
+      invalidateAllRelatedQueries();
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => recepcionesApi.deleteRecepcion(id),
+    onSuccess: () => {
+      invalidateAllRelatedQueries();
     },
   });
 
@@ -48,12 +67,7 @@ export const useRecepciones = (filters?: RecepcionFilterParams) => {
     mutationFn: ({ id, motivo }: { id: number; motivo?: string }) =>
       recepcionesApi.anularRecepcion(id, motivo),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['recepciones'] });
-      queryClient.invalidateQueries({ queryKey: ['recepciones-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['inventario'] });
-      queryClient.invalidateQueries({ queryKey: ['productos'] });
-      queryClient.invalidateQueries({ queryKey: ['movimientos'] });
-      queryClient.invalidateQueries({ queryKey: ['almacenes'] });
+      invalidateAllRelatedQueries();
     },
   });
 
@@ -71,6 +85,12 @@ export const useRecepciones = (filters?: RecepcionFilterParams) => {
 
     isCreating: createMutation.isPending,
     createRecepcion: createMutation.mutateAsync,
+
+    isUpdating: updateMutation.isPending,
+    updateRecepcion: updateMutation.mutateAsync,
+
+    isDeleting: deleteMutation.isPending,
+    deleteRecepcion: deleteMutation.mutateAsync,
 
     isAnulando: anularMutation.isPending,
     anularRecepcion: anularMutation.mutateAsync,

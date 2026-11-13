@@ -2,6 +2,7 @@ import apiClient from '../../../api/client';
 import {
   Recepcion,
   RecepcionCreatePayload,
+  RecepcionUpdatePayload,
   RecepcionStats,
   RecepcionFilterParams,
   AlmacenRef,
@@ -28,6 +29,18 @@ export const recepcionesApi = {
 
   createRecepcion: async (payload: RecepcionCreatePayload): Promise<Recepcion> => {
     const response = await apiClient.post<Recepcion>('/recepciones', payload);
+    return response.data;
+  },
+
+  updateRecepcion: async (id: number, payload: RecepcionUpdatePayload): Promise<Recepcion> => {
+    const response = await apiClient.put<Recepcion>(`/recepciones/${id}`, payload);
+    return response.data;
+  },
+
+  deleteRecepcion: async (id: number): Promise<{ message: string; id: number; numero_recepcion: string }> => {
+    const response = await apiClient.delete<{ message: string; id: number; numero_recepcion: string }>(
+      `/recepciones/${id}`
+    );
     return response.data;
   },
 

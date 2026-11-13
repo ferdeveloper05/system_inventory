@@ -14,14 +14,19 @@ import {
   FileText,
   Boxes,
   ExternalLink,
+  Edit3,
+  Trash2,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useAuthStore, isUserAdmin } from '../../../store/authStore';
 
 interface RecepcionDetailModalProps {
   recepcion: Recepcion | null;
   isOpen: boolean;
   onClose: () => void;
   onAnular: (recepcion: Recepcion) => void;
+  onEdit?: (recepcion: Recepcion) => void;
+  onDelete?: (recepcion: Recepcion) => void;
 }
 
 export const RecepcionDetailModal: React.FC<RecepcionDetailModalProps> = ({
@@ -29,7 +34,12 @@ export const RecepcionDetailModal: React.FC<RecepcionDetailModalProps> = ({
   isOpen,
   onClose,
   onAnular,
+  onEdit,
+  onDelete,
 }) => {
+  const { user } = useAuthStore();
+  const isAdmin = isUserAdmin(user);
+
   if (!isOpen || !recepcion) return null;
 
   const totalUnidades = recepcion.detalles.reduce(
@@ -300,7 +310,7 @@ export const RecepcionDetailModal: React.FC<RecepcionDetailModalProps> = ({
 
         {/* Pie de modal */}
         <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={handlePrint}
               className="inline-flex items-center space-x-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors shadow-2xs"
@@ -309,6 +319,18 @@ export const RecepcionDetailModal: React.FC<RecepcionDetailModalProps> = ({
               <span>Imprimir / Exportar</span>
             </button>
 
+            {/* Botón Editar para Administradores */}
+            {isAdmin && onEdit && (
+              <button
+                onClick={() => onEdit(recepcion)}
+                className="inline-flex items-center space-x-1.5 px-3.5 py-2 text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-300 rounded-lg hover:bg-amber-100 transition-colors"
+                title="Editar recepción y reasignar almacén (Administrador)"
+              >
+                <Edit3 className="w-3.5 h-3.5 text-amber-600" />
+                <span>Editar / Corregir Almacén</span>
+              </button>
+            )}
+
             {recepcion.estado !== 'ANULADA' && (
               <button
                 onClick={() => onAnular(recepcion)}
@@ -316,6 +338,18 @@ export const RecepcionDetailModal: React.FC<RecepcionDetailModalProps> = ({
               >
                 <Ban className="w-3.5 h-3.5 text-rose-600" />
                 <span>Anular Recepción</span>
+              </button>
+            )}
+
+            {/* Botón Eliminar Permanente para Administradores */}
+            {isAdmin && onDelete && (
+              <button
+                onClick={() => onDelete(recepcion)}
+                className="inline-flex items-center space-x-1.5 px-3.5 py-2 text-xs font-semibold text-rose-700 bg-white border border-rose-300 rounded-lg hover:bg-rose-50 transition-colors"
+                title="Eliminar albarán y revertir stock (Administrador)"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                <span>Eliminar Permanente</span>
               </button>
             )}
           </div>

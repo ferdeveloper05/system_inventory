@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useRecepciones } from '../hooks/useRecepciones';
 import { Recepcion } from '../types';
+import { useAuthStore, isUserAdmin } from '../../../store/authStore';
 import {
   Search,
   Filter,
@@ -16,12 +17,16 @@ import {
   Eye,
   Ban,
   Boxes,
+  Edit3,
+  Trash2,
 } from 'lucide-react';
 
 interface RecepcionesListProps {
   onOpenCreate: () => void;
   onOpenDetail: (recepcion: Recepcion) => void;
   onOpenAnular: (recepcion: Recepcion) => void;
+  onOpenEdit?: (recepcion: Recepcion) => void;
+  onOpenDelete?: (recepcion: Recepcion) => void;
   searchTerm: string;
   setSearchTerm: (s: string) => void;
   selectedAlmacen: string;
@@ -34,6 +39,8 @@ export const RecepcionesList: React.FC<RecepcionesListProps> = ({
   onOpenCreate,
   onOpenDetail,
   onOpenAnular,
+  onOpenEdit,
+  onOpenDelete,
   searchTerm,
   setSearchTerm,
   selectedAlmacen,
@@ -41,6 +48,9 @@ export const RecepcionesList: React.FC<RecepcionesListProps> = ({
   selectedEstado,
   setSelectedEstado,
 }) => {
+  const { user } = useAuthStore();
+  const isAdmin = isUserAdmin(user);
+
   const {
     recepciones,
     almacenes,
@@ -303,6 +313,19 @@ export const RecepcionesList: React.FC<RecepcionesListProps> = ({
                         >
                           <Eye className="w-4 h-4" />
                         </button>
+
+                        {/* Edición (Solo Administrador) */}
+                        {isAdmin && onOpenEdit && (
+                          <button
+                            onClick={() => onOpenEdit(r)}
+                            className="p-1.5 text-amber-600 hover:text-amber-800 hover:bg-amber-50 rounded-lg transition-colors"
+                            title="Editar recepción y corregir almacén (Administrador)"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                        )}
+
+                        {/* Anulación */}
                         {r.estado !== 'ANULADA' && (
                           <button
                             onClick={() => onOpenAnular(r)}
@@ -310,6 +333,17 @@ export const RecepcionesList: React.FC<RecepcionesListProps> = ({
                             title="Anular recepción y revertir stock"
                           >
                             <Ban className="w-4 h-4" />
+                          </button>
+                        )}
+
+                        {/* Eliminación Completa (Solo Administrador) */}
+                        {isAdmin && onOpenDelete && (
+                          <button
+                            onClick={() => onOpenDelete(r)}
+                            className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors"
+                            title="Eliminar recepción por completo (Administrador)"
+                          >
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         )}
                       </div>
