@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAuthStore } from '../store/authStore';
+import { useAuthStore, isUserAdmin } from '../store/authStore';
 
 interface ProtectedRouteProps {
   allowedRoles?: string[];
@@ -15,7 +15,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) 
 
   if (allowedRoles && allowedRoles.length > 0) {
     const userRole = user?.rol_nombre;
-    const hasRole = user?.is_superuser || (userRole && allowedRoles.includes(userRole));
+    const hasRole = isUserAdmin(user) || (userRole && allowedRoles.includes(userRole));
     if (!hasRole) {
       return (
         <div className="flex flex-col items-center justify-center h-full p-8 text-center">

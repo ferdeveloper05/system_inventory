@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUsuarios } from '../hooks/useUsuarios';
 import { X, UserPlus, Lock, Mail, User, Shield, Briefcase } from 'lucide-react';
 
@@ -21,6 +21,15 @@ export const CreateUsuarioModal: React.FC<CreateUsuarioModalProps> = ({ isOpen, 
   });
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setErrorMessage(null);
+      if (roles.length > 0 && (!formData.id_rol || !roles.some(r => r.id === formData.id_rol))) {
+        setFormData(prev => ({ ...prev, id_rol: roles[0].id }));
+      }
+    }
+  }, [isOpen, roles]);
 
   if (!isOpen) return null;
 

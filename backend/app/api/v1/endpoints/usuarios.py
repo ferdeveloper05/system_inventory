@@ -20,7 +20,7 @@ from app.schemas.usuarios import (
 from app.services.auditoria_service import auditoria_service
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 router = APIRouter()
 
@@ -356,7 +356,10 @@ def list_usuarios(
     db: Session = Depends(get_db),
     current_user: Usuarios = Depends(get_current_user)
 ):
-    query = db.query(Usuarios)
+    query = db.query(Usuarios).options(
+        joinedload(Usuarios.rol),
+        joinedload(Usuarios.empleado).joinedload(Empleados.departamento)
+    )
     if activo is not None:
         query = query.filter(Usuarios.activo == activo)
     return query.order_by(Usuarios.id.asc()).offset(skip).limit(limit).all()
@@ -376,6 +379,29 @@ def create_usuario(
     if db.query(Usuarios).filter(func.lower(Usuarios.email) == clean_email).first():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El email ya está registrado")
 
+    # Validar que el rol exista
+    rol = db.query(Roles).filter(Roles.id == usuario_in.id_rol).first()
+    if not rol:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El rol seleccionado no es válido o no existe")
+
+    # Si se asigna rol de Administrador o Superadmin, asegurar privilegios totales
+    is_admin = usuario_in.is_superuser
+    if rol.nombre and rol.nombre.strip().upper() in ["ADMINISTRADOR", "ADMIN", "SUPERADMIN"]:
+        is_admin = True
+
+    # Validar que el empleado exista y no esté vinculado ya a otro usuario
+    if usuario_in.id_empleado is not None:
+        empleado = db.query(Empleados).filter(Empleados.id == usuario_in.id_empleado).first()
+        if not empleado:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El empleado seleccionado no existe")
+        
+        existente_emp = db.query(Usuarios).filter(Usuarios.id_empleado == usuario_in.id_empleado).first()
+        if existente_emp:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"El empleado '{empleado.nombre} {empleado.apellido}' ya tiene una cuenta vinculada ({existente_emp.username})"
+            )
+
     user = Usuarios(
         username=clean_username,
         email=clean_email,
@@ -383,7 +409,7 @@ def create_usuario(
         id_rol=usuario_in.id_rol,
         id_empleado=usuario_in.id_empleado,
         activo=usuario_in.activo,
-        is_superuser=usuario_in.is_superuser,
+        is_superuser=is_admin,
     )
     db.add(user)
     db.flush()
@@ -394,7 +420,7 @@ def create_usuario(
         operacion="INSERT",
         registro_id=user.id,
         datos_anteriores=None,
-        datos_nuevos={"username": user.username, "email": user.email, "id_rol": user.id_rol},
+        datos_nuevos={"username": user.username, "email": user.email, "id_rol": user.id_rol, "is_superuser": user.is_superuser},
         id_usuario=current_user.id
     )
     db.commit()
@@ -408,7 +434,15 @@ def get_usuario(
     db: Session = Depends(get_db),
     current_user: Usuarios = Depends(get_current_user)
 ):
-    user = db.query(Usuarios).filter(Usuarios.id == id_usuario).first()
+    user = (
+        db.query(Usuarios)
+        .options(
+            joinedload(Usuarios.rol),
+            joinedload(Usuarios.empleado).joinedload(Empleados.departamento)
+        )
+        .filter(Usuarios.id == id_usuario)
+        .first()
+    )
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado")
     return user
@@ -445,6 +479,12 @@ def update_usuario(
 
     if usuario_in.id_rol is not None:
         user.id_rol = usuario_in.id_rol
+        rol = db.query(Roles).filter(Roles.id == usuario_in.id_rol).first()
+        if rol and rol.nombre and rol.nombre.strip().upper() in ["ADMINISTRADOR", "ADMIN", "SUPERADMIN"]:
+            user.is_superuser = True
+
+    if getattr(usuario_in, "is_superuser", None) is not None:
+        user.is_superuser = usuario_in.is_superuser
 
     if usuario_in.id_empleado is not None:
         existente_emp = db.query(Usuarios).filter(

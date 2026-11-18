@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -37,9 +38,11 @@ def register(
     total_usuarios = db.query(Usuarios).count()
     is_first_user = total_usuarios == 0
 
-    # 3. Obtener o crear Roles base si no existen
+    # 3. Obtener o crear Roles base si no existen (búsqueda insensible a mayúsculas)
     target_role_name = "ADMINISTRADOR" if is_first_user else "OPERADOR"
-    rol = db.query(Roles).filter(Roles.nombre == target_role_name).first()
+    rol = db.query(Roles).filter(
+        func.upper(func.trim(Roles.nombre)) == target_role_name
+    ).first()
     if not rol:
         rol = Roles(
             nombre=target_role_name,
@@ -50,38 +53,56 @@ def register(
         db.flush()
 
     # 4. Obtener o crear Departamento base si no existe
-    departamento = db.query(Departamento).filter(Departamento.nombre == "Infraestructura").first()
+    departamento = db.query(Departamento).filter(
+        or_(
+            func.lower(Departamento.nombre) == "infraestructura",
+            func.lower(Departamento.nombre).like("%infraestructura%")
+        )
+    ).first()
+    if not departamento:
+        departamento = db.query(Departamento).first()
     if not departamento:
         departamento = Departamento(
-            nombre="Infraestructura",
+            nombre="Infraestructura & Operaciones",
             descripcion="Departamento principal de Infraestructura y Operaciones TI",
             activo=True
         )
         db.add(departamento)
         db.flush()
 
-    # 5. Crear Empleado vinculado
-    empleado = Empleados(
-        nombre=register_in.nombre,
-        apellido=register_in.apellido,
-        email=register_in.email,
-        telefono=register_in.telefono,
-        cargo=register_in.cargo or "Operador de Infraestructura",
-        id_departamento=departamento.id,
-        activo=True
-    )
-    db.add(empleado)
-    db.flush()
+    # 5. Vincular o crear Empleado
+    clean_email = register_in.email.strip().lower()
+    emp_existente = db.query(Empleados).filter(func.lower(Empleados.email) == clean_email).first()
+    if emp_existente:
+        if emp_existente.usuario:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Ya existe una cuenta de usuario vinculada a esta dirección de correo electrónico"
+            )
+        empleado = emp_existente
+    else:
+        empleado = Empleados(
+            nombre=register_in.nombre.strip(),
+            apellido=register_in.apellido.strip(),
+            email=clean_email,
+            telefono=register_in.telefono,
+            cargo=register_in.cargo or "Operador de Infraestructura",
+            id_departamento=departamento.id,
+            activo=True
+        )
+        db.add(empleado)
+        db.flush()
 
-    # 6. Crear Usuario
+    # 6. Crear Usuario asegurando permisos totales si es admin
+    is_admin = is_first_user or (rol.nombre and rol.nombre.strip().upper() in ["ADMINISTRADOR", "ADMIN", "SUPERADMIN"])
     usuario = Usuarios(
-        username=register_in.username,
-        email=register_in.email,
+        username=register_in.username.strip(),
+        email=clean_email,
         hashed_password=get_password_hash(register_in.password),
         id_empleado=empleado.id,
         id_rol=rol.id,
         activo=True,
-        is_superuser=is_first_user
+        is_superuser=is_admin
     )
     db.add(usuario)
     db.flush()
@@ -110,7 +131,10 @@ def register(
         id_rol=usuario.id_rol,
         rol_nombre=rol.nombre,
         id_empleado=usuario.id_empleado,
-        nombre_completo=nombre_completo
+        nombre_completo=nombre_completo,
+        id_departamento=departamento.id,
+        departamento_nombre=departamento.nombre,
+        cargo=empleado.cargo,
     )
 
 
@@ -140,8 +164,15 @@ def login(
 def get_me(current_user: Usuarios = Depends(get_current_user)):
     """Retorna información detallada del usuario logueado en la sesión actual."""
     nombre_completo = None
+    id_departamento = None
+    departamento_nombre = None
+    cargo = None
     if current_user.empleado:
         nombre_completo = f"{current_user.empleado.nombre} {current_user.empleado.apellido}"
+        id_departamento = current_user.empleado.id_departamento
+        cargo = current_user.empleado.cargo
+        if current_user.empleado.departamento:
+            departamento_nombre = current_user.empleado.departamento.nombre
 
     return CurrentUserResponse(
         id=current_user.id,
@@ -153,5 +184,8 @@ def get_me(current_user: Usuarios = Depends(get_current_user)):
         rol_nombre=current_user.rol.nombre if current_user.rol else None,
         id_empleado=current_user.id_empleado,
         nombre_completo=nombre_completo,
+        id_departamento=id_departamento,
+        departamento_nombre=departamento_nombre,
+        cargo=cargo,
     )
 

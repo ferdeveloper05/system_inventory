@@ -39,6 +39,24 @@ async def lifespan(app: FastAPI):
                 conn.execute(text("ALTER TABLE detalle_recepcion ADD COLUMN IF NOT EXISTS estado_producto VARCHAR(50) DEFAULT 'CONFORME';"))
                 conn.execute(text("ALTER TABLE detalle_recepcion ADD COLUMN IF NOT EXISTS observaciones TEXT;"))
                 
+                # Sincronización de columnas para el módulo de Solicitudes y Despacho
+                conn.execute(text("ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS id_departamento_solicitante INTEGER REFERENCES departamentos(id);"))
+                conn.execute(text("ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS aprobada_por_director BOOLEAN DEFAULT FALSE;"))
+                conn.execute(text("ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS id_director_aprueba INTEGER REFERENCES usuarios(id);"))
+                conn.execute(text("ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS fecha_aprobacion_director TIMESTAMP;"))
+                conn.execute(text("ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS id_director_infraestructura INTEGER REFERENCES usuarios(id);"))
+                conn.execute(text("ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS fecha_aceptacion_infraestructura TIMESTAMP;"))
+                conn.execute(text("ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS id_usuario_despacha INTEGER REFERENCES usuarios(id);"))
+                conn.execute(text("ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS fecha_despacho TIMESTAMP;"))
+                conn.execute(text("ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS comprobante_despacho_url VARCHAR(500);"))
+                conn.execute(text("ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS observaciones_despacho TEXT;"))
+                conn.execute(text("ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS id_usuario_recibe INTEGER REFERENCES usuarios(id);"))
+                conn.execute(text("ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS fecha_cierre TIMESTAMP;"))
+                conn.execute(text("ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS comprobante_entrega_url VARCHAR(500);"))
+                conn.execute(text("ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS observaciones_entrega TEXT;"))
+                conn.execute(text("ALTER TABLE detalle_solicitud ADD COLUMN IF NOT EXISTS id_almacen_despacho INTEGER REFERENCES almacenes(id);"))
+                conn.execute(text("ALTER TABLE detalle_solicitud ADD COLUMN IF NOT EXISTS observaciones_item TEXT;"))
+                
                 # Semillar categorías base de infraestructura si no existen
                 check_cats = conn.execute(text("SELECT COUNT(*) FROM categorias")).scalar()
                 if check_cats == 0:
@@ -175,6 +193,14 @@ def health_check():
         "service": settings.PROJECT_NAME,
         "environment": "development"
     }
+
+# Montaje de archivos estáticos para comprobantes y evidencias fotográficas
+import os
+from fastapi.staticfiles import StaticFiles
+
+uploads_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "uploads"))
+os.makedirs(os.path.join(uploads_dir, "solicitudes"), exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
 
 # Registrar Routers de la API v1
 app.include_router(api_router, prefix=settings.API_V1_STR)

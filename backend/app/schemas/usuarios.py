@@ -98,6 +98,7 @@ class UsuarioUpdate(BaseSchema):
     id_rol: Optional[int] = None
     id_empleado: Optional[int] = None
     activo: Optional[bool] = None
+    is_superuser: Optional[bool] = None
     password: Optional[str] = None
 
 

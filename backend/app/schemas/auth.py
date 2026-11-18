@@ -40,4 +40,7 @@ class CurrentUserResponse(BaseSchema):
     rol_nombre: Optional[str] = None
     id_empleado: Optional[int] = None
     nombre_completo: Optional[str] = None
+    id_departamento: Optional[int] = None
+    departamento_nombre: Optional[str] = None
+    cargo: Optional[str] = None
 

@@ -10,6 +10,9 @@ export interface User {
   rol_nombre?: string;
   id_empleado?: number;
   nombre_completo?: string;
+  id_departamento?: number;
+  departamento_nombre?: string;
+  cargo?: string;
 }
 
 interface AuthState {
@@ -29,6 +32,26 @@ export const isUserAdmin = (user: User | null): boolean => {
   if (user.is_superuser) return true;
   const role = (user.rol_nombre || '').trim().toUpperCase();
   return ['ADMINISTRADOR', 'ADMIN', 'SUPERADMIN'].includes(role);
+};
+
+export const isUserDirector = (user: User | null): boolean => {
+  if (!user) return false;
+  if (isUserAdmin(user)) return true;
+  const role = (user.rol_nombre || '').trim().toUpperCase();
+  return role.includes('DIRECTOR');
+};
+
+export const isUserAnalista = (user: User | null): boolean => {
+  if (!user) return false;
+  const role = (user.rol_nombre || '').trim().toUpperCase();
+  return role.includes('ANALISTA');
+};
+
+export const isUserInfraestructura = (user: User | null): boolean => {
+  if (!user) return false;
+  if (isUserAdmin(user)) return true;
+  const dep = (user.departamento_nombre || '').trim().toUpperCase();
+  return dep.includes('INFRAESTRUCTURA') || dep.includes('OPERACIONES');
 };
 
 export const useAuthStore = create<AuthState>((set) => {
